@@ -13,6 +13,7 @@ import (
 
 var sourcePath *string
 var outputPath *string
+var fileType *string
 
 var endPointIdentifier = "ENDPOINT"
 var paramIdentifier = "PARAM"
@@ -68,18 +69,22 @@ func main() {
 	SetEnvironment()
 	ScanFiles()
 	GenerateOutput()
+	GoodbyeMsg()
 }
 
 func SetEnvironment() {
-	sourcePath = flag.String("path", "", "set path of source.")
+	sourcePath = flag.String("path", "./", "set path of source.")
 	outputPath = flag.String("out", "out.rml", "set file/path of the output file.")
+	fileType = flag.String("lang", ".java", "Limit the type of file example: .java (.php||.go||.rust)")
 	flag.Parse()
+
+	fmt.Printf("✓ Set filetype to: %s \n", *fileType)
 	fmt.Printf("✓ Set path to: %s \n", *sourcePath)
 	fmt.Printf("✓ Set output to: %s \n", *outputPath)
 }
 
 func ScanFiles() {
-	fmt.Println("start gathering of Files ... please stand by!")
+	fmt.Println("- start gathering of Files ... please stand by!")
 	err := filepath.Walk(*sourcePath,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -95,12 +100,18 @@ func ScanFiles() {
 }
 
 func GenerateModel(path string) {
-	file, err := os.Open(path)
-	if err != nil {
-		fmt.Println(fileReadIssue)
-		log.Fatal(err)
+	files, _ := ioutil.ReadDir(path)
+	for _, fileFromDir := range files {
+		if !fileFromDir.IsDir() && strings.Contains(fileFromDir.Name(), *fileType) {
+			fmt.Println(fileFromDir.Name())
+			file, err := os.Open(fileFromDir.Name())
+			if err != nil {
+				fmt.Println(fileReadIssue)
+				log.Fatal(err)
+			}
+			AnalyseFile(file)
+		}
 	}
-	AnalyseFile(file)
 }
 
 func AnalyseFile(file *os.File) {
@@ -246,7 +257,7 @@ func SeparateLineByTags(line string) []string {
 	return strings.Split(strings.ReplaceAll(line, "\t", ""), " ")
 }
 func GenerateOutput() {
-	fmt.Println("start creating of API structure ... please stand by!")
+	fmt.Println("- start creating of API structure ... please stand by!")
 	GenerateArrayStructure()
 
 	fmt.Println("✓ finished with creating. Thanks for using DogDoc")
@@ -298,4 +309,14 @@ func WelcomeMsg() {
 	fmt.Println("     --- DocDog ---")
 	fmt.Printf("      version:%s\n", version)
 	fmt.Print(" written by Swen Kalski\n\n\n")
+}
+
+func GoodbyeMsg() {
+	fmt.Println("")
+	fmt.Println("^..^      /")
+	fmt.Println("/_/\\_____/")
+	fmt.Println("   /\\   /\\")
+	fmt.Println("  /  \\ /  \\")
+	fmt.Println("")
+	fmt.Println("Thanks for using DocDog")
 }
