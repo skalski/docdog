@@ -25,37 +25,37 @@ const version = "0.2"
 const fileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
 
 type Objects struct {
-	name string
+	name     string
 	variable []Variable
 }
 
 type Variable struct {
-	name string
+	name        string
 	description string
-	notnull bool
+	notnull     bool
 }
 
 type Params struct {
-	name string
+	name        string
 	description string
-	notnull bool
+	notnull     bool
 }
 
 type Endpoint struct {
-	url string
+	url         string
 	description string
-	httpType string
-	params []Params
-	variable []Variable
-	objects []string
+	httpType    string
+	params      []Params
+	variable    []Variable
+	objects     []string
 }
 
 type TempEndpoint struct {
-	url string
+	url         string
 	description string
-	httpType string
-	params []Params
-	objects []string
+	httpType    string
+	params      []Params
+	objects     []string
 }
 
 var objectList []Objects
@@ -78,7 +78,7 @@ func SetEnvironment() {
 	fmt.Printf("✓ Set output to: %s \n", *outputPath)
 }
 
-func ScanFiles(){
+func ScanFiles() {
 	fmt.Println("start gathering of Files ... please stand by!")
 	err := filepath.Walk(*sourcePath,
 		func(path string, info os.FileInfo, err error) error {
@@ -94,7 +94,7 @@ func ScanFiles(){
 	fmt.Println("✓ finished with gathering of Files.")
 }
 
-func GenerateModel(path string){
+func GenerateModel(path string) {
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Println(fileReadIssue)
@@ -103,14 +103,14 @@ func GenerateModel(path string){
 	AnalyseFile(file)
 }
 
-func AnalyseFile(file *os.File){
+func AnalyseFile(file *os.File) {
 	b, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Println(fileReadIssue)
 		log.Fatal(err)
 	}
 	temp := BytesToStringArrayByLinebreaks(b)
-	if(IsController(b)) {
+	if IsController(b) {
 		for i, s := range temp {
 			if IsEndpointNotation(s) {
 				tempEndpointList = append(tempEndpointList, CreateApiEndpoint(i, temp))
@@ -135,7 +135,7 @@ func AnalyseFile(file *os.File){
 
 func IsJavaVariable(line string) bool {
 	temp := strings.Split(strings.ReplaceAll(line, "\t", ""), " ")
-	return strings.Contains(line, "private") && len(temp)==2 || strings.Contains(line, "private")&& len(temp)==2
+	return strings.Contains(line, "private") && len(temp) == 2 || strings.Contains(line, "private") && len(temp) == 2
 }
 
 func IsController(line []byte) bool {
@@ -181,11 +181,11 @@ func CreateVariableStruct(line string, index int, wholeFile []string) (Variable,
 		tempVar.name = strings.ReplaceAll(temp[3], ";", "")
 		i := 1
 		for i <= 3 {
-			if IsDocDogNotation(wholeFile[index - i]) {
-				if IsNotNullNotation(wholeFile[index - i]) {
+			if IsDocDogNotation(wholeFile[index-i]) {
+				if IsNotNullNotation(wholeFile[index-i]) {
 					tempVar.notnull = true
 				}
-				if IsDescriptionNotation(wholeFile[index - i]) {
+				if IsDescriptionNotation(wholeFile[index-i]) {
 					tempVar.description = GetStringFromQouteLine(wholeFile[i])
 				}
 			}
@@ -211,14 +211,14 @@ func CreateApiEndpoint(index int, wholeFile []string) TempEndpoint {
 		if CommentEndTag(wholeFile[i]) {
 			break
 		}
-		if IsDescriptionNotation(wholeFile[i]){
+		if IsDescriptionNotation(wholeFile[i]) {
 			tempVar.description = GetStringFromQouteLine(wholeFile[i])
 		}
-		if IsParamNotation(wholeFile[i]){
+		if IsParamNotation(wholeFile[i]) {
 			tempParams = append(tempParams, CreateFromInstructionTag(wholeFile[i]))
 		}
 		if IsPayloadNotation(wholeFile[i]) {
-			tempPayload:= SeparateLineByTags(wholeFile[i])
+			tempPayload := SeparateLineByTags(wholeFile[i])
 			tempObjects = append(tempObjects, tempPayload[1])
 		}
 		i++
@@ -230,7 +230,7 @@ func CreateApiEndpoint(index int, wholeFile []string) TempEndpoint {
 }
 
 func CreateFromInstructionTag(line string) Params {
-	temp:= SeparateLineByTags(line)
+	temp := SeparateLineByTags(line)
 	param := Params{
 		name:        temp[1],
 		description: "",
@@ -242,13 +242,12 @@ func CreateFromInstructionTag(line string) Params {
 	return param
 }
 
-func SeparateLineByTags(line string) []string{
+func SeparateLineByTags(line string) []string {
 	return strings.Split(strings.ReplaceAll(line, "\t", ""), " ")
 }
-func GenerateOutput()  {
+func GenerateOutput() {
 	fmt.Println("start creating of API structure ... please stand by!")
 	GenerateArrayStructure()
-
 
 	fmt.Println("✓ finished with creating. Thanks for using DogDoc")
 }
@@ -267,11 +266,15 @@ func GenerateArrayStructure() {
 			endpoint.params = append(endpoint.params, params)
 		}
 		for _, object := range tempEndpoint.objects {
-			//todo: create json from Object
+			CreateObjectJSON()
 			endpoint.objects = append(endpoint.objects, object)
 		}
 		endpointList = append(endpointList, endpoint)
 	}
+}
+
+func CreateObjectJSON() {
+
 }
 
 func GetStringFromQouteLine(str string) (result string) {
