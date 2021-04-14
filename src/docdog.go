@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -14,15 +15,16 @@ import (
 var sourcePath *string
 var outputPath *string
 var fileType *string
+var verbose *bool
 
-var endPointIdentifier = "ENDPOINT"
-var paramIdentifier = "PARAM"
-var payloadIdentifier = "PAYLOAD"
-var descriptionIdentifier = "DESCRIPTION"
-var notNullIdentifier = "NOTNULL"
-var typeIdentifier = "TYPE"
+var endPointIdentifier = "@DD:ENDPOINT"
+var paramIdentifier = "@DD:PARAM"
+var payloadIdentifier = "@DD:PAYLOAD"
+var descriptionIdentifier = "@DD:DESCRIPTION"
+var notNullIdentifier = "@DD:NOTNULL"
+var typeIdentifier = "@DD:TYPE"
 
-const version = "0.2"
+const version = "0.1 ALPHA"
 const fileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
 
 type Objects struct {
@@ -76,6 +78,7 @@ func SetEnvironment() {
 	sourcePath = flag.String("path", "./", "set path of source.")
 	outputPath = flag.String("out", "out.rml", "set file/path of the output file.")
 	fileType = flag.String("lang", ".java", "Limit the type of file example: .java (.php||.go||.rust)")
+	verbose = flag.Bool("verbose", true, "Debug true/false")
 	flag.Parse()
 
 	fmt.Printf("✓ Set filetype to: %s \n", *fileType)
@@ -103,8 +106,7 @@ func GenerateModel(path string) {
 	files, _ := ioutil.ReadDir(path)
 	for _, fileFromDir := range files {
 		if !fileFromDir.IsDir() && strings.Contains(fileFromDir.Name(), *fileType) {
-			fmt.Println(fileFromDir.Name())
-			file, err := os.Open(fileFromDir.Name())
+			file, err := os.Open(path + fileFromDir.Name())
 			if err != nil {
 				fmt.Println(fileReadIssue)
 				log.Fatal(err)
@@ -117,11 +119,11 @@ func GenerateModel(path string) {
 func AnalyseFile(file *os.File) {
 	b, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Println(fileReadIssue)
-		log.Fatal(err)
+		fmt.Println("Cannot open File")
 	}
 	temp := BytesToStringArrayByLinebreaks(b)
 	if IsController(b) {
+		InfoLog("Found Controller:", file.Name())
 		for i, s := range temp {
 			if IsEndpointNotation(s) {
 				tempEndpointList = append(tempEndpointList, CreateApiEndpoint(i, temp))
@@ -215,8 +217,6 @@ func CreateApiEndpoint(index int, wholeFile []string) TempEndpoint {
 		objects:     nil,
 	}
 	i := index + 1
-	var tempParams []Params
-	var tempObjects []string
 
 	for {
 		if CommentEndTag(wholeFile[i]) {
@@ -226,35 +226,41 @@ func CreateApiEndpoint(index int, wholeFile []string) TempEndpoint {
 			tempVar.description = GetStringFromQouteLine(wholeFile[i])
 		}
 		if IsParamNotation(wholeFile[i]) {
-			tempParams = append(tempParams, CreateFromInstructionTag(wholeFile[i]))
+			InfoLog("Found Param at :", wholeFile[i])
+			tempVar.params = append(tempVar.params, CreateFromInstructionTag(wholeFile[i]))
 		}
 		if IsPayloadNotation(wholeFile[i]) {
+			InfoLog("Found Payload at :", wholeFile[i])
 			tempPayload := SeparateLineByTags(wholeFile[i])
-			tempObjects = append(tempObjects, tempPayload[1])
+			tempVar.objects = append(tempVar.objects, tempPayload[1])
 		}
 		i++
 	}
-	tempVar.params = tempParams
-	tempVar.objects = tempObjects
-
+	b, _ := json.Marshal(tempVar)
+	InfoLog("Produced Endpoint :", string(b))
 	return tempVar
 }
 
 func CreateFromInstructionTag(line string) Params {
+	InfoLog("Produced Param for current Endpoint :", line)
 	temp := SeparateLineByTags(line)
-	param := Params{
+	fmt.Println(strings.Join(temp, ", "))
+	param := &Params{
 		name:        temp[1],
-		description: "",
+		description: GetStringFromQouteLine(strings.TrimSpace(line)),
 		notnull:     false,
 	}
+
 	if IsNotNullNotation(line) {
 		param.notnull = true
 	}
-	return param
+	b, _ := json.Marshal(param)
+	InfoLog("Produced Param for current Endpoint :", string(b))
+	return *param
 }
 
 func SeparateLineByTags(line string) []string {
-	return strings.Split(strings.ReplaceAll(line, "\t", ""), " ")
+	return strings.Split(strings.TrimSpace(line), " ")
 }
 func GenerateOutput() {
 	fmt.Println("- start creating of API structure ... please stand by!")
@@ -285,24 +291,32 @@ func GenerateArrayStructure() {
 }
 
 func CreateObjectJSON() {
-
+	fmt.Printf("endpoints: %q\n", tempEndpointList)
+	fmt.Printf("objects: %q\n", objectList)
+	fmt.Printf("objectVars: %q\n", objectList[0].variable)
 }
 
 func GetStringFromQouteLine(str string) (result string) {
-	s := strings.Index(str, "\"")
+	s := strings.Index(str, "'")
 	if s == -1 {
 		return
 	}
-	s += len("\"")
-	e := strings.Index(str[s:], "\"")
+	s += len("'")
+	e := strings.Index(str[s:], "'")
 	if e == -1 {
 		return
 	}
-	return str[s:e]
+	return str[s : s+e]
 }
 
 func BytesToStringArrayByLinebreaks(data []byte) []string {
 	return strings.Split(strings.ReplaceAll(string(data[:]), "\r\n", "\n"), "\n")
+}
+
+func InfoLog(msg string, source string) {
+	if !*verbose {
+		log.Println(msg + source)
+	}
 }
 
 func WelcomeMsg() {
