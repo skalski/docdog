@@ -13,7 +13,7 @@ private int someWhat = 1;
 
 
     /*
-        @DD:ENDPOINT 'http://test.com/api/testpoint'
+        @DD:ENDPOINT 'api/testpoint'
         @DD:DESCRIPTION 'important testendpoint'
         @DD:PARAM id 'id of user'
         @DD:PARAM token 'security-token' @DD:NOTNULL

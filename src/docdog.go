@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,6 +16,7 @@ var sourcePath *string
 var outputPath *string
 var fileType *string
 var verbose *bool
+var tabset *int
 
 var endPointIdentifier = "@DD:ENDPOINT"
 var paramIdentifier = "@DD:PARAM"
@@ -77,9 +79,10 @@ func main() {
 
 func SetEnvironment() {
 	sourcePath = flag.String("path", "./", "set path of source.")
-	outputPath = flag.String("out", "out.rml", "set file/path of the output file.")
+	outputPath = flag.String("out", "out.raml", "set file/path of the output file.")
 	fileType = flag.String("lang", ".java", "Limit the type of file example: .java (.php||.go||.rust)")
 	verbose = flag.Bool("verbose", true, "Debug true/false")
+	tabset = flag.Int("tabs", 4, "lenght of tabs")
 	flag.Parse()
 
 	fmt.Printf("✓ Set filetype to: %s \n", *fileType)
@@ -89,17 +92,7 @@ func SetEnvironment() {
 
 func ScanFiles() {
 	fmt.Println("- start gathering of Files ... please stand by!")
-	err := filepath.Walk(*sourcePath,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			GenerateModel(path)
-			return nil
-		})
-	if err != nil {
-		log.Println(err)
-	}
+	GenerateModel(*sourcePath)
 	fmt.Println("✓ finished with gathering of Files.")
 }
 
@@ -300,7 +293,7 @@ func SeparateLineByTags(line string) []string {
 func GenerateOutput() {
 	fmt.Println("- start creating of API structure ... please stand by!")
 	GenerateEndpointsArrayStructure()
-	CreateObjectArrayStructure()
+	fileBuilderRAML()
 	fmt.Println("✓ finished with creating. Thanks for using DogDoc")
 }
 
@@ -324,10 +317,6 @@ func GenerateEndpointsArrayStructure() {
 	}
 }
 
-func CreateObjectArrayStructure() {
-
-}
-
 func GetStringFromQouteLine(str string) (result string) {
 	s := strings.Index(str, "'")
 	if s == -1 {
@@ -349,6 +338,99 @@ func InfoLog(msg string, source string) {
 	if !*verbose {
 		log.Println(msg + source)
 	}
+}
+
+func fileBuilderRAML() {
+	outputData := []string{
+		"#RAML1.0",
+	}
+	outputData = append(outputData, BuildRAMLObjects()...)
+	outputData = append(outputData, BuildEndpoints()...)
+
+	file, err := os.OpenFile(*outputPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	if err != nil {
+		log.Fatalf("failed creating file: %s", err)
+	}
+
+	datawriter := bufio.NewWriter(file)
+	for _, data := range outputData {
+		_, _ = datawriter.WriteString(data + "\n")
+	}
+
+	datawriter.Flush()
+	file.Close()
+}
+
+func BuildRAMLObjects() []string {
+	outputData := []string{}
+	if len(objectList) != 0 {
+		outputData = append(outputData, "types:")
+		for _, object := range objectList {
+			outputData = append(outputData, StringWithTabs(1, ObjectNameBuilder(object.name)+":"))
+			outputData = append(outputData, StringWithTabs(2, "type: object"))
+			for _, vars := range object.variable {
+				outputData = append(outputData, StringWithTabs(3, vars.name+":"))
+				outputData = append(outputData, StringWithTabs(4, "type:"+vars.typ))
+				if vars.notnull {
+					outputData = append(outputData, StringWithTabs(4, "required: true"))
+				}
+			}
+		}
+	}
+	return outputData
+}
+
+func BuildEndpoints() []string {
+	outputData := []string{}
+	for _, endpoint := range endpointList {
+		outputData = append(outputData, endpoint.url+":")
+		outputData = append(outputData, StringWithTabs(1, "description: "+endpoint.description))
+		outputData = append(outputData, StringWithTabs(2, endpoint.httpType+":"))
+		if len(endpoint.params) != 0 {
+			outputData = append(outputData, StringWithTabs(3, "queryParameters:"))
+			for _, param := range endpoint.params {
+				outputData = append(outputData, StringWithTabs(4, param.name+":"))
+				outputData = append(outputData, StringWithTabs(5, "description: "+param.description))
+				if param.notnull {
+					outputData = append(outputData, StringWithTabs(5, "required: true"))
+				}
+			}
+		}
+	}
+	return outputData
+}
+
+func ObjectNameBuilder(filename string) string {
+	parts := strings.Split(strings.TrimSpace(filename), "/")
+	if len(parts) <= 2 {
+		parts = strings.Split(strings.TrimSpace(filename), "\\")
+	}
+	objectName := parts[len(parts)-1]
+	return strings.Replace(objectName, *fileType, "", -1)
+}
+
+func Tab() string {
+	if *tabset == 0 {
+		return "\t"
+	}
+	tabs := []string{}
+	i := 0
+	for i <= *tabset-1 {
+		tabs = append(tabs, " ")
+		i++
+	}
+	return strings.Join(tabs, "")
+}
+
+func StringWithTabs(count int, text string) string {
+	tabs := []string{}
+	i := 0
+	for i <= count-1 {
+		tabs = append(tabs, Tab())
+		i++
+	}
+	return strings.Join(tabs, "") + text
 }
 
 func WelcomeMsg() {
