@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -23,6 +22,7 @@ var payloadIdentifier = "@DD:PAYLOAD"
 var descriptionIdentifier = "@DD:DESCRIPTION"
 var notNullIdentifier = "@DD:NOTNULL"
 var typeIdentifier = "@DD:TYPE"
+var ignoreIdentifier = "@DD:IGNORE"
 
 const version = "0.1 ALPHA"
 const fileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
@@ -35,6 +35,7 @@ type Objects struct {
 type Variable struct {
 	name        string
 	description string
+	typ         string
 	notnull     bool
 }
 
@@ -103,16 +104,23 @@ func ScanFiles() {
 }
 
 func GenerateModel(path string) {
-	files, _ := ioutil.ReadDir(path)
-	for _, fileFromDir := range files {
-		if !fileFromDir.IsDir() && strings.Contains(fileFromDir.Name(), *fileType) {
-			file, err := os.Open(path + fileFromDir.Name())
+	err := filepath.Walk(path,
+		func(filePath string, info os.FileInfo, err error) error {
 			if err != nil {
-				fmt.Println(fileReadIssue)
-				log.Fatal(err)
+				return err
 			}
-			AnalyseFile(file)
-		}
+			if !info.IsDir() && strings.Contains(info.Name(), *fileType) {
+				file, err := os.Open(filePath)
+				if err != nil {
+					fmt.Println(fileReadIssue)
+					log.Fatal(err)
+				}
+				AnalyseFile(file)
+			}
+			return nil
+		})
+	if err != nil {
+		log.Println(err)
 	}
 }
 
@@ -126,16 +134,19 @@ func AnalyseFile(file *os.File) {
 		InfoLog("Found Controller:", file.Name())
 		for i, s := range temp {
 			if IsEndpointNotation(s) {
-				tempEndpointList = append(tempEndpointList, CreateApiEndpoint(i, temp))
+				tempEndpointList = append(tempEndpointList, CreateApiEndpoint(i-1, temp))
 			}
 		}
 	} else {
+		InfoLog("Found possible Object: ", file.Name())
 		var variableList []Variable
 		for i, s := range temp {
-			if IsJavaVariable(s) {
-				variable, err := CreateVariableStruct(s, i, temp)
-				if err == nil {
-					variableList = append(variableList, variable)
+			if IsJavaVariableOrFunctionentry(s) {
+				if !HasIgnoreNotation(i, temp) {
+					variable, err := CreateVariableStruct(s, i, temp)
+					if err == nil {
+						variableList = append(variableList, variable)
+					}
 				}
 			}
 		}
@@ -146,17 +157,27 @@ func AnalyseFile(file *os.File) {
 	}
 }
 
-func IsJavaVariable(line string) bool {
-	temp := strings.Split(strings.ReplaceAll(line, "\t", ""), " ")
-	return strings.Contains(line, "private") && len(temp) == 2 || strings.Contains(line, "private") && len(temp) == 2
+func IsJavaVariableOrFunctionentry(line string) bool {
+	return strings.Contains(line, "private") || strings.Contains(line, "public")
 }
 
 func IsController(line []byte) bool {
 	return IsEndpointNotation(string(line[:]))
 }
 
-func IsDocDogNotation(line string) bool {
-	return IsEndpointNotation(line) || IsParamNotation(line) || IsPayloadNotation(line) || IsNotNullNotation(line) || IsDescriptionNotation(line)
+func IsIgnoreNotation(line string) bool {
+	return strings.Contains(line, ignoreIdentifier)
+}
+
+func HasIgnoreNotation(index int, wholeFile []string) bool {
+	i := 1
+	for i <= 3 {
+		if IsIgnoreNotation(wholeFile[index-i]) {
+			return true
+		}
+		i++
+	}
+	return false
 }
 
 func IsEndpointNotation(line string) bool {
@@ -179,6 +200,10 @@ func IsDescriptionNotation(line string) bool {
 	return strings.Contains(line, descriptionIdentifier)
 }
 
+func IsConnectionMethodNotation(line string) bool {
+	return strings.Contains(line, typeIdentifier)
+}
+
 func CommentEndTag(line string) bool {
 	return strings.Contains(line, "*/")
 }
@@ -188,20 +213,26 @@ func CreateVariableStruct(line string, index int, wholeFile []string) (Variable,
 	tempVar := Variable{
 		name:        "",
 		description: "",
+		typ:         "",
 		notnull:     false,
 	}
-	if !strings.Contains(line, "(") {
-		tempVar.name = strings.ReplaceAll(temp[3], ";", "")
+	if !strings.Contains(line, "(") && !strings.Contains(line, "class") && !strings.Contains(line, "{") {
+		tempVar.name = strings.ReplaceAll(temp[2], ";", "")
+		tempVar.typ = temp[1]
+		InfoLog("Found Variable: ", tempVar.name)
+		InfoLog("Variable has type: ", tempVar.typ)
 		i := 1
 		for i <= 3 {
-			if IsDocDogNotation(wholeFile[index-i]) {
-				if IsNotNullNotation(wholeFile[index-i]) {
-					tempVar.notnull = true
-				}
-				if IsDescriptionNotation(wholeFile[index-i]) {
-					tempVar.description = GetStringFromQouteLine(wholeFile[i])
-				}
+			if IsNotNullNotation(wholeFile[index-i]) {
+				InfoLog("Found notNullTag for Variable: ", tempVar.name)
+				tempVar.notnull = true
 			}
+			if IsDescriptionNotation(wholeFile[index-i]) {
+				InfoLog("Found description for Variable: ", tempVar.name)
+				tempVar.description = GetStringFromQouteLine(wholeFile[i])
+			}
+
+			i++
 		}
 		return tempVar, nil
 	}
@@ -222,8 +253,17 @@ func CreateApiEndpoint(index int, wholeFile []string) TempEndpoint {
 		if CommentEndTag(wholeFile[i]) {
 			break
 		}
+		if IsEndpointNotation(wholeFile[i]) {
+			InfoLog("Found Url at :", wholeFile[i])
+			tempVar.url = GetStringFromQouteLine(wholeFile[i])
+		}
 		if IsDescriptionNotation(wholeFile[i]) {
 			tempVar.description = GetStringFromQouteLine(wholeFile[i])
+		}
+		if IsConnectionMethodNotation(wholeFile[i]) {
+			InfoLog("Found Connection Type at :", wholeFile[i])
+			tempPayload := SeparateLineByTags(wholeFile[i])
+			tempVar.httpType = tempPayload[1]
 		}
 		if IsParamNotation(wholeFile[i]) {
 			InfoLog("Found Param at :", wholeFile[i])
@@ -236,15 +276,12 @@ func CreateApiEndpoint(index int, wholeFile []string) TempEndpoint {
 		}
 		i++
 	}
-	b, _ := json.Marshal(tempVar)
-	InfoLog("Produced Endpoint :", string(b))
 	return tempVar
 }
 
 func CreateFromInstructionTag(line string) Params {
 	InfoLog("Produced Param for current Endpoint :", line)
 	temp := SeparateLineByTags(line)
-	fmt.Println(strings.Join(temp, ", "))
 	param := &Params{
 		name:        temp[1],
 		description: GetStringFromQouteLine(strings.TrimSpace(line)),
@@ -254,8 +291,6 @@ func CreateFromInstructionTag(line string) Params {
 	if IsNotNullNotation(line) {
 		param.notnull = true
 	}
-	b, _ := json.Marshal(param)
-	InfoLog("Produced Param for current Endpoint :", string(b))
 	return *param
 }
 
@@ -264,12 +299,12 @@ func SeparateLineByTags(line string) []string {
 }
 func GenerateOutput() {
 	fmt.Println("- start creating of API structure ... please stand by!")
-	GenerateArrayStructure()
-
+	GenerateEndpointsArrayStructure()
+	CreateObjectArrayStructure()
 	fmt.Println("✓ finished with creating. Thanks for using DogDoc")
 }
 
-func GenerateArrayStructure() {
+func GenerateEndpointsArrayStructure() {
 	for _, tempEndpoint := range tempEndpointList {
 		endpoint := Endpoint{
 			url:         tempEndpoint.url,
@@ -283,17 +318,14 @@ func GenerateArrayStructure() {
 			endpoint.params = append(endpoint.params, params)
 		}
 		for _, object := range tempEndpoint.objects {
-			CreateObjectJSON()
 			endpoint.objects = append(endpoint.objects, object)
 		}
 		endpointList = append(endpointList, endpoint)
 	}
 }
 
-func CreateObjectJSON() {
-	fmt.Printf("endpoints: %q\n", tempEndpointList)
-	fmt.Printf("objects: %q\n", objectList)
-	fmt.Printf("objectVars: %q\n", objectList[0].variable)
+func CreateObjectArrayStructure() {
+
 }
 
 func GetStringFromQouteLine(str string) (result string) {
