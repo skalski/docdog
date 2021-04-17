@@ -32,6 +32,8 @@ If no `-out` is provided, the RAML File will generated as `out.raml` in the fold
 Actually DogDoc only provides JAVA. Golang and RUST are up on the wishlist.
 
 ## usage
+You can see, how the Comments for DocDog are used in the `\exmpl\java` folder.
+
 Every endpoint of your API must be Marked for DocDog to find it:
 
 Example:
