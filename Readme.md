@@ -62,4 +62,4 @@ private bool ignoreThis;
 
 Actually I got no idea.
 For private this will stay free.
-May i take fee later for companies!
+May I take fee later for companies!
