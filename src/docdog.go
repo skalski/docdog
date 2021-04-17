@@ -2,6 +2,10 @@ package main
 
 import (
 	"bufio"
+	"docdog/src/constants"
+	"docdog/src/helper"
+	"docdog/src/javalang"
+	"docdog/src/notations"
 	"errors"
 	"flag"
 	"fmt"
@@ -18,56 +22,10 @@ var fileType *string
 var verbose *bool
 var tabset *int
 
-var endPointIdentifier = "@DD:ENDPOINT"
-var paramIdentifier = "@DD:PARAM"
-var payloadIdentifier = "@DD:PAYLOAD"
-var descriptionIdentifier = "@DD:DESCRIPTION"
-var notNullIdentifier = "@DD:NOTNULL"
-var typeIdentifier = "@DD:TYPE"
-var ignoreIdentifier = "@DD:IGNORE"
-
-const version = "0.1 ALPHA"
-const fileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
-
-type Objects struct {
-	name     string
-	variable []Variable
-}
-
-type Variable struct {
-	name        string
-	description string
-	typ         string
-	notnull     bool
-}
-
-type Params struct {
-	name        string
-	description string
-	notnull     bool
-}
-
-type Endpoint struct {
-	url         string
-	description string
-	httpType    string
-	params      []Params
-	variable    []Variable
-	objects     []string
-}
-
-type TempEndpoint struct {
-	url         string
-	description string
-	httpType    string
-	params      []Params
-	objects     []string
-}
-
-var objectList []Objects
-var paramsList []Params
-var endpointList []Endpoint
-var tempEndpointList []TempEndpoint
+var objectList []notations.Objects
+var paramsList []notations.Params
+var endpointList []notations.Endpoint
+var tempEndpointList []notations.TempEndpoint
 
 func main() {
 	WelcomeMsg()
@@ -80,7 +38,7 @@ func main() {
 func SetEnvironment() {
 	sourcePath = flag.String("path", "./", "set path of source.")
 	outputPath = flag.String("out", "out.raml", "set file/path of the output file.")
-	fileType = flag.String("lang", ".java", "Limit the type of file example: .java (.php||.go||.rust)")
+	fileType = flag.String("javalang", ".java", "Limit the type of file example: .java (.php||.go||.rust)")
 	verbose = flag.Bool("verbose", true, "Debug true/false")
 	tabset = flag.Int("tabs", 4, "lenght of tabs")
 	flag.Parse()
@@ -91,9 +49,9 @@ func SetEnvironment() {
 }
 
 func ScanFiles() {
-	fmt.Println("- start gathering of Files ... please stand by!")
+	fmt.Println(constants.StartGatheringFiles)
 	GenerateModel(*sourcePath)
-	fmt.Println("✓ finished with gathering of Files.")
+	fmt.Println(constants.FinishedGatheringFiles)
 }
 
 func GenerateModel(path string) {
@@ -105,7 +63,7 @@ func GenerateModel(path string) {
 			if !info.IsDir() && strings.Contains(info.Name(), *fileType) {
 				file, err := os.Open(filePath)
 				if err != nil {
-					fmt.Println(fileReadIssue)
+					fmt.Println(constants.FileReadIssue)
 					log.Fatal(err)
 				}
 				AnalyseFile(file)
@@ -120,22 +78,22 @@ func GenerateModel(path string) {
 func AnalyseFile(file *os.File) {
 	b, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Println("Cannot open File")
+		fmt.Println(constants.CannotOpenFiles)
 	}
 	temp := BytesToStringArrayByLinebreaks(b)
-	if IsController(b) {
-		InfoLog("Found Controller:", file.Name())
+	if notations.IsController(b) {
+		InfoLog(constants.LogMsgFoundController, file.Name())
 		for i, s := range temp {
-			if IsEndpointNotation(s) {
+			if notations.IsEndpointNotation(s) {
 				tempEndpointList = append(tempEndpointList, CreateApiEndpoint(i-1, temp))
 			}
 		}
 	} else {
-		InfoLog("Found possible Object: ", file.Name())
-		var variableList []Variable
+		InfoLog(constants.LogMsgFoundPossibleObject, file.Name())
+		var variableList []notations.Variable
 		for i, s := range temp {
 			if IsJavaVariableOrFunctionentry(s) {
-				if !HasIgnoreNotation(i, temp) {
+				if !notations.HasIgnoreNotation(i, temp) {
 					variable, err := CreateVariableStruct(s, i, temp)
 					if err == nil {
 						variableList = append(variableList, variable)
@@ -143,191 +101,105 @@ func AnalyseFile(file *os.File) {
 				}
 			}
 		}
-		objectList = append(objectList, Objects{
-			name:     file.Name(),
-			variable: variableList,
+		objectList = append(objectList, notations.Objects{
+			Name:     file.Name(),
+			Variable: variableList,
 		})
 	}
 }
 
 func IsJavaVariableOrFunctionentry(line string) bool {
-	return strings.Contains(line, "private") || strings.Contains(line, "public")
+	return strings.Contains(line, javalang.Private) || strings.Contains(line, javalang.Public)
 }
 
-func IsController(line []byte) bool {
-	return IsEndpointNotation(string(line[:]))
-}
-
-func IsIgnoreNotation(line string) bool {
-	return strings.Contains(line, ignoreIdentifier)
-}
-
-func HasIgnoreNotation(index int, wholeFile []string) bool {
-	i := 1
-	for i <= 3 {
-		if IsIgnoreNotation(wholeFile[index-i]) {
-			return true
-		}
-		i++
+func CreateVariableStruct(line string, index int, wholeFile []string) (notations.Variable, error) {
+	if *fileType == ".java" {
+		return javalang.JavaVariableHandler(line, index, wholeFile)
 	}
-	return false
+
+	return notations.Variable{}, errors.New(constants.NoMatchingLanguageMsg)
 }
 
-func IsEndpointNotation(line string) bool {
-	return strings.Contains(line, endPointIdentifier)
-}
-
-func IsParamNotation(line string) bool {
-	return strings.Contains(line, paramIdentifier)
-}
-
-func IsPayloadNotation(line string) bool {
-	return strings.Contains(line, payloadIdentifier)
-}
-
-func IsNotNullNotation(line string) bool {
-	return strings.Contains(line, notNullIdentifier)
-}
-
-func IsDescriptionNotation(line string) bool {
-	return strings.Contains(line, descriptionIdentifier)
-}
-
-func IsConnectionMethodNotation(line string) bool {
-	return strings.Contains(line, typeIdentifier)
-}
-
-func CommentEndTag(line string) bool {
-	return strings.Contains(line, "*/")
-}
-
-func CreateVariableStruct(line string, index int, wholeFile []string) (Variable, error) {
-	temp := SeparateLineByTags(line)
-	tempVar := Variable{
-		name:        "",
-		description: "",
-		typ:         "",
-		notnull:     false,
-	}
-	if !strings.Contains(line, "(") && !strings.Contains(line, "class") && !strings.Contains(line, "{") {
-		tempVar.name = strings.ReplaceAll(temp[2], ";", "")
-		tempVar.typ = temp[1]
-		InfoLog("Found Variable: ", tempVar.name)
-		InfoLog("Variable has type: ", tempVar.typ)
-		i := 1
-		for i <= 3 {
-			if IsNotNullNotation(wholeFile[index-i]) {
-				InfoLog("Found notNullTag for Variable: ", tempVar.name)
-				tempVar.notnull = true
-			}
-			if IsDescriptionNotation(wholeFile[index-i]) {
-				InfoLog("Found description for Variable: ", tempVar.name)
-				tempVar.description = GetStringFromQouteLine(wholeFile[i])
-			}
-
-			i++
-		}
-		return tempVar, nil
-	}
-	return tempVar, errors.New("is function")
-}
-
-func CreateApiEndpoint(index int, wholeFile []string) TempEndpoint {
-	tempVar := TempEndpoint{
-		url:         "",
-		description: "",
-		httpType:    "",
-		params:      nil,
-		objects:     nil,
+func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
+	tempVar := notations.TempEndpoint{
+		Url:         "",
+		Description: "",
+		HttpType:    "",
+		Params:      nil,
+		Objects:     nil,
 	}
 	i := index + 1
 
 	for {
-		if CommentEndTag(wholeFile[i]) {
+		if notations.CommentEndTag(wholeFile[i]) {
 			break
 		}
-		if IsEndpointNotation(wholeFile[i]) {
-			InfoLog("Found Url at :", wholeFile[i])
-			tempVar.url = GetStringFromQouteLine(wholeFile[i])
+		if notations.IsEndpointNotation(wholeFile[i]) {
+			InfoLog(constants.LogMsgFoundUrl, wholeFile[i])
+			tempVar.Url = helper.GetStringFromQouteLine(wholeFile[i])
 		}
-		if IsDescriptionNotation(wholeFile[i]) {
-			tempVar.description = GetStringFromQouteLine(wholeFile[i])
+		if notations.IsDescriptionNotation(wholeFile[i]) {
+			tempVar.Description = helper.GetStringFromQouteLine(wholeFile[i])
 		}
-		if IsConnectionMethodNotation(wholeFile[i]) {
-			InfoLog("Found Connection Type at :", wholeFile[i])
-			tempPayload := SeparateLineByTags(wholeFile[i])
-			tempVar.httpType = tempPayload[1]
+		if notations.IsConnectionMethodNotation(wholeFile[i]) {
+			InfoLog(constants.LogMsgFoundConnectioType, wholeFile[i])
+			tempPayload := helper.SeparateLineByTags(wholeFile[i])
+			tempVar.HttpType = tempPayload[1]
 		}
-		if IsParamNotation(wholeFile[i]) {
-			InfoLog("Found Param at :", wholeFile[i])
-			tempVar.params = append(tempVar.params, CreateFromInstructionTag(wholeFile[i]))
+		if notations.IsParamNotation(wholeFile[i]) {
+			InfoLog(constants.LogMsgFoundParam, wholeFile[i])
+			tempVar.Params = append(tempVar.Params, CreateFromInstructionTag(wholeFile[i]))
 		}
-		if IsPayloadNotation(wholeFile[i]) {
-			InfoLog("Found Payload at :", wholeFile[i])
-			tempPayload := SeparateLineByTags(wholeFile[i])
-			tempVar.objects = append(tempVar.objects, tempPayload[1])
+		if notations.IsPayloadNotation(wholeFile[i]) {
+			InfoLog(constants.LogMsgFoundPayload, wholeFile[i])
+			tempPayload := helper.SeparateLineByTags(wholeFile[i])
+			tempVar.Objects = append(tempVar.Objects, tempPayload[1])
 		}
 		i++
 	}
 	return tempVar
 }
 
-func CreateFromInstructionTag(line string) Params {
-	InfoLog("Produced Param for current Endpoint :", line)
-	temp := SeparateLineByTags(line)
-	param := &Params{
-		name:        temp[1],
-		description: GetStringFromQouteLine(strings.TrimSpace(line)),
-		notnull:     false,
+func CreateFromInstructionTag(line string) notations.Params {
+	InfoLog(constants.LogMsgFoundParamForEndpoint, line)
+	temp := helper.SeparateLineByTags(line)
+	param := &notations.Params{
+		Name:        temp[1],
+		Description: helper.GetStringFromQouteLine(strings.TrimSpace(line)),
+		Notnull:     false,
 	}
 
-	if IsNotNullNotation(line) {
-		param.notnull = true
+	if notations.IsNotNullNotation(line) {
+		param.Notnull = true
 	}
 	return *param
 }
 
-func SeparateLineByTags(line string) []string {
-	return strings.Split(strings.TrimSpace(line), " ")
-}
 func GenerateOutput() {
-	fmt.Println("- start creating of API structure ... please stand by!")
+	fmt.Println(constants.StartCreatingAPIStructure)
 	GenerateEndpointsArrayStructure()
 	fileBuilderRAML()
-	fmt.Println("✓ finished with creating. Thanks for using DogDoc")
+	fmt.Println(constants.FinishedCreatingAPIStructure)
 }
 
 func GenerateEndpointsArrayStructure() {
 	for _, tempEndpoint := range tempEndpointList {
-		endpoint := Endpoint{
-			url:         tempEndpoint.url,
-			description: tempEndpoint.description,
-			httpType:    tempEndpoint.httpType,
-			params:      nil,
-			variable:    nil,
-			objects:     nil,
+		endpoint := notations.Endpoint{
+			Url:         tempEndpoint.Url,
+			Description: tempEndpoint.Description,
+			HttpType:    tempEndpoint.HttpType,
+			Params:      nil,
+			Variable:    nil,
+			Objects:     nil,
 		}
-		for _, params := range tempEndpoint.params {
-			endpoint.params = append(endpoint.params, params)
+		for _, params := range tempEndpoint.Params {
+			endpoint.Params = append(endpoint.Params, params)
 		}
-		for _, object := range tempEndpoint.objects {
-			endpoint.objects = append(endpoint.objects, object)
+		for _, object := range tempEndpoint.Objects {
+			endpoint.Objects = append(endpoint.Objects, object)
 		}
 		endpointList = append(endpointList, endpoint)
 	}
-}
-
-func GetStringFromQouteLine(str string) (result string) {
-	s := strings.Index(str, "'")
-	if s == -1 {
-		return
-	}
-	s += len("'")
-	e := strings.Index(str[s:], "'")
-	if e == -1 {
-		return
-	}
-	return str[s : s+e]
 }
 
 func BytesToStringArrayByLinebreaks(data []byte) []string {
@@ -358,22 +230,22 @@ func fileBuilderRAML() {
 		_, _ = datawriter.WriteString(data + "\n")
 	}
 
-	datawriter.Flush()
-	file.Close()
+	_ = datawriter.Flush()
+	_ = file.Close()
 }
 
 func BuildRAMLObjects() []string {
 	outputData := []string{}
 	if len(objectList) != 0 {
-		outputData = append(outputData, "types:")
+		outputData = append(outputData, constants.Types)
 		for _, object := range objectList {
-			outputData = append(outputData, StringWithTabs(1, ObjectNameBuilder(object.name)+":"))
-			outputData = append(outputData, StringWithTabs(2, "type: object"))
-			for _, vars := range object.variable {
-				outputData = append(outputData, StringWithTabs(3, vars.name+":"))
-				outputData = append(outputData, StringWithTabs(4, "type:"+vars.typ))
-				if vars.notnull {
-					outputData = append(outputData, StringWithTabs(4, "required: true"))
+			outputData = append(outputData, StringWithTabs(1, ObjectNameBuilder(object.Name)+constants.Colon))
+			outputData = append(outputData, StringWithTabs(2, constants.TypeObject))
+			for _, vars := range object.Variable {
+				outputData = append(outputData, StringWithTabs(3, vars.Name+constants.Colon))
+				outputData = append(outputData, StringWithTabs(4, constants.TypeTag+vars.Typ))
+				if vars.Notnull {
+					outputData = append(outputData, StringWithTabs(4, constants.RequiredTagTrue))
 				}
 			}
 		}
@@ -384,17 +256,25 @@ func BuildRAMLObjects() []string {
 func BuildEndpoints() []string {
 	outputData := []string{}
 	for _, endpoint := range endpointList {
-		outputData = append(outputData, endpoint.url+":")
-		outputData = append(outputData, StringWithTabs(1, "description: "+endpoint.description))
-		outputData = append(outputData, StringWithTabs(2, endpoint.httpType+":"))
-		if len(endpoint.params) != 0 {
-			outputData = append(outputData, StringWithTabs(3, "queryParameters:"))
-			for _, param := range endpoint.params {
-				outputData = append(outputData, StringWithTabs(4, param.name+":"))
-				outputData = append(outputData, StringWithTabs(5, "description: "+param.description))
-				if param.notnull {
-					outputData = append(outputData, StringWithTabs(5, "required: true"))
+		outputData = append(outputData, endpoint.Url+constants.Colon)
+		outputData = append(outputData, StringWithTabs(1, constants.DescriptionTag+endpoint.Description))
+		outputData = append(outputData, StringWithTabs(2, endpoint.HttpType+constants.Colon))
+		if len(endpoint.Params) != 0 {
+			outputData = append(outputData, StringWithTabs(3, constants.QueryParamsTag))
+			for _, param := range endpoint.Params {
+				outputData = append(outputData, StringWithTabs(4, param.Name+constants.Colon))
+				outputData = append(outputData, StringWithTabs(5, constants.DescriptionTag+param.Description))
+				if param.Notnull {
+					outputData = append(outputData, StringWithTabs(5, constants.RequiredTagTrue))
 				}
+			}
+		}
+		if len(endpoint.Objects) != 0 {
+			outputData = append(outputData, StringWithTabs(3, constants.BodyTag))
+			outputData = append(outputData, StringWithTabs(4, constants.ApplicationJsonTag))
+			outputData = append(outputData, StringWithTabs(5, constants.AmfAdditionalProperties))
+			for _, param := range endpoint.Objects {
+				outputData = append(outputData, StringWithTabs(6, constants.TypeTag+param))
 			}
 		}
 	}
@@ -435,7 +315,7 @@ func StringWithTabs(count int, text string) string {
 
 func WelcomeMsg() {
 	fmt.Println("     --- DocDog ---")
-	fmt.Printf("      version:%s\n", version)
+	fmt.Printf("      version:%s\n", constants.Version)
 	fmt.Print(" written by Swen Kalski\n\n\n")
 }
 
