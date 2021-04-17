@@ -23,7 +23,6 @@ var verbose *bool
 var tabset *int
 
 var objectList []notations.Objects
-var paramsList []notations.Params
 var endpointList []notations.Endpoint
 var tempEndpointList []notations.TempEndpoint
 
