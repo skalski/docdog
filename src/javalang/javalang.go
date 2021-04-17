@@ -10,7 +10,7 @@ import (
 const Private = "private"
 const Public = "public"
 
-const arrayIdentifier = "array"
+const arrayIdentifier = "[]"
 const listIdentifier = "List<"
 
 func JavaVariableHandler(line string, index int, wholeFile []string) (notations.Variable, error) {
@@ -21,11 +21,20 @@ func JavaVariableHandler(line string, index int, wholeFile []string) (notations.
 		Description: "",
 		Typ:         "",
 		Notnull:     false,
+		IsArray:     false,
 	}
 
 	if !strings.Contains(line, "(") && !strings.Contains(line, "class") && !strings.Contains(line, "{") {
+		if len(temp) <= 2 {
+			return tempVar, errors.New("is malformed function or variable")
+		}
 		tempVar.Name = strings.ReplaceAll(temp[2], ";", "")
-		tempVar.Typ = temp[1]
+		if IsArrayType(line) {
+			tempVar.IsArray = true
+			tempVar.Typ = CreateArrayType(line)
+		} else {
+			tempVar.Typ = temp[1]
+		}
 		i := 1
 		for i <= 3 {
 			if notations.IsNotNullNotation(wholeFile[index-i]) {
@@ -41,4 +50,12 @@ func JavaVariableHandler(line string, index int, wholeFile []string) (notations.
 	}
 
 	return tempVar, errors.New("is function")
+}
+
+func IsArrayType(line string) bool {
+	return strings.Contains(line, arrayIdentifier) || strings.Contains(line, listIdentifier)
+}
+
+func CreateArrayType(line string) string {
+	return strings.Replace(strings.Replace(strings.Replace(line, ">", "", 1), listIdentifier, "", 1), arrayIdentifier, "", 1)
 }

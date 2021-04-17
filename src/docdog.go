@@ -243,7 +243,13 @@ func BuildRAMLObjects() []string {
 			outputData = append(outputData, StringWithTabs(2, constants.TypeObject))
 			for _, vars := range object.Variable {
 				outputData = append(outputData, StringWithTabs(3, vars.Name+constants.Colon))
-				outputData = append(outputData, StringWithTabs(4, constants.TypeTag+vars.Typ))
+				if vars.IsArray {
+					outputData = append(outputData, StringWithTabs(4, constants.TypeTag+"array"))
+					outputData = append(outputData, StringWithTabs(5, "items:"))
+					outputData = append(outputData, StringWithTabs(6, constants.TypeTag+vars.Typ))
+				} else {
+					outputData = append(outputData, StringWithTabs(4, constants.TypeTag+vars.Typ))
+				}
 				if vars.Notnull {
 					outputData = append(outputData, StringWithTabs(4, constants.RequiredTagTrue))
 				}

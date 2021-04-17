@@ -22,6 +22,10 @@ private int someElse;
 */
 private bool ignoreThis;
 
+private List<otherObject> testList;
+
+private String[] cars = {"Volvo", "BMW", "Ford", "Mazda"};
+
     private function getSomeElse(int someElse){
         this.someElse = someElse;
     }

@@ -20,6 +20,7 @@ type Variable struct {
 	Description string
 	Typ         string
 	Notnull     bool
+	IsArray     bool
 }
 
 type Params struct {
