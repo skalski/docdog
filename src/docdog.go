@@ -37,7 +37,7 @@ func main() {
 func SetEnvironment() {
 	sourcePath = flag.String("path", "./", "set path of source.")
 	outputPath = flag.String("out", "out.raml", "set file/path of the output file.")
-	fileType = flag.String("javalang", ".java", "Limit the type of file example: .java (.php||.go||.rust)")
+	fileType = flag.String("lang", ".java", "Limit the type of file example: .java (.php||.go||.rust)")
 	verbose = flag.Bool("verbose", true, "Debug true/false")
 	tabset = flag.Int("tabs", 4, "lenght of tabs")
 	flag.Parse()
