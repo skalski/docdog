@@ -2,6 +2,8 @@
 
 Creates RAML 1.0 files from existing source by Swen Kalski
 
+[![Go](https://github.com/skalski/docdog/actions/workflows/go.yml/badge.svg)](https://github.com/skalski/docdog/actions/workflows/go.yml)
+
 ## How to use
 Simple download the binaries or build from source.
 
