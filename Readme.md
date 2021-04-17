@@ -57,3 +57,9 @@ Also, you can say DocDog to ignore a variable in an Object:
 */
 private bool ignoreThis;
 ```
+
+## License
+
+Actually I got no idea.
+For private this will stay free.
+May i take fee later for companies!
