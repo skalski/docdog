@@ -4,6 +4,14 @@ Creates RAML 1.0 files from existing source by Swen Kalski
 
 [![Go](https://github.com/skalski/docdog/actions/workflows/go.yml/badge.svg)](https://github.com/skalski/docdog/actions/workflows/go.yml)
 
+## Download
+You can dirctly download the latest binaries here
+
+[Windows (x64)](https://github.com/skalski/docdog/raw/master/bin/win/docdog.exe) ,
+[Linux (x64)](https://github.com/skalski/docdog/raw/master/bin/linux/docdog) ,
+[OSX (amd)](https://github.com/skalski/docdog/raw/master/bin/macos_amd/docdog) ,
+[OSX (arm)](https://github.com/skalski/docdog/raw/master/bin/macos_arm/docdog)
+
 ## How to use
 Simple download the binaries or build from source.
 
