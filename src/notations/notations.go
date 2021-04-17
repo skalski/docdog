@@ -10,6 +10,8 @@ var notNullIdentifier = "@DD:NOTNULL"
 var typeIdentifier = "@DD:TYPE"
 var ignoreIdentifier = "@DD:IGNORE"
 
+var springEndpointController = "@RestController"
+
 type Objects struct {
 	Name     string
 	Variable []Variable
@@ -66,7 +68,7 @@ func HasIgnoreNotation(index int, wholeFile []string) bool {
 }
 
 func IsEndpointNotation(line string) bool {
-	return strings.Contains(line, endPointIdentifier)
+	return strings.Contains(line, endPointIdentifier) || strings.Contains(line, springEndpointController)
 }
 
 func IsParamNotation(line string) bool {

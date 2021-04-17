@@ -6,6 +6,7 @@ import (
 	"docdog/src/helper"
 	"docdog/src/javalang"
 	"docdog/src/notations"
+	"docdog/src/spring"
 	"errors"
 	"flag"
 	"fmt"
@@ -21,6 +22,7 @@ var outputPath *string
 var fileType *string
 var verbose *bool
 var tabset *int
+var isSpringBoot = false
 
 var objectList []notations.Objects
 var endpointList []notations.Endpoint
@@ -41,6 +43,10 @@ func SetEnvironment() {
 	verbose = flag.Bool("verbose", true, "Debug true/false")
 	tabset = flag.Int("tabs", 4, "lenght of tabs")
 	flag.Parse()
+	if *fileType == ".spring" {
+		isSpringBoot = true
+		*fileType = ".java"
+	}
 
 	fmt.Printf("✓ Set filetype to: %s \n", *fileType)
 	fmt.Printf("✓ Set path to: %s \n", *sourcePath)
@@ -84,7 +90,11 @@ func AnalyseFile(file *os.File) {
 		InfoLog(constants.LogMsgFoundController, file.Name())
 		for i, s := range temp {
 			if notations.IsEndpointNotation(s) {
-				tempEndpointList = append(tempEndpointList, CreateApiEndpoint(i-1, temp))
+				if !isSpringBoot {
+					tempEndpointList = append(tempEndpointList, CreateApiEndpoint(i-1, temp))
+				} else {
+					tempEndpointList = append(tempEndpointList, spring.CreateApiEndpoint(i-1, temp))
+				}
 			}
 		}
 	} else {
