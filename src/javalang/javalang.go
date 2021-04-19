@@ -31,7 +31,7 @@ func JavaVariableHandler(line string, index int, wholeFile []string) (notations.
 		tempVar.Name = strings.ReplaceAll(temp[2], ";", "")
 		if IsArrayType(line) {
 			tempVar.IsArray = true
-			tempVar.Typ = CreateArrayType(line)
+			tempVar.Typ = CreateArrayType(temp[1])
 		} else {
 			tempVar.Typ = temp[1]
 		}

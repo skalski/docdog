@@ -1,6 +1,8 @@
 package notations
 
-import "strings"
+import (
+	"strings"
+)
 
 var endPointIdentifier = "@DD:ENDPOINT"
 var paramIdentifier = "@DD:PARAM"
@@ -9,6 +11,9 @@ var descriptionIdentifier = "@DD:DESCRIPTION"
 var notNullIdentifier = "@DD:NOTNULL"
 var typeIdentifier = "@DD:TYPE"
 var ignoreIdentifier = "@DD:IGNORE"
+
+var springEndpointController = "@RestController"
+var springMappingTagIdentifier = "Mapping("
 
 type Objects struct {
 	Name     string
@@ -26,7 +31,9 @@ type Variable struct {
 type Params struct {
 	Name        string
 	Description string
+	VarType     string
 	Notnull     bool
+	IsArray     bool
 }
 
 type Endpoint struct {
@@ -47,7 +54,7 @@ type TempEndpoint struct {
 }
 
 func IsController(line []byte) bool {
-	return IsEndpointNotation(string(line[:]))
+	return IsEndpointNotation(string(line[:])) || strings.Contains(string(line[:]), springEndpointController)
 }
 
 func IsIgnoreNotation(line string) bool {
@@ -66,7 +73,7 @@ func HasIgnoreNotation(index int, wholeFile []string) bool {
 }
 
 func IsEndpointNotation(line string) bool {
-	return strings.Contains(line, endPointIdentifier)
+	return strings.Contains(line, endPointIdentifier) || strings.Contains(line, springMappingTagIdentifier)
 }
 
 func IsParamNotation(line string) bool {

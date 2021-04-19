@@ -1,6 +1,6 @@
 package constants
 
-const Version = "0.1 ALPHA"
+const Version = "0.2 BETA"
 const FileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
 
 const StartGatheringFiles = "- start gathering of Files ... please stand by!"
@@ -23,9 +23,11 @@ const TypeTag = "type: "
 const RequiredTagTrue = "required: true"
 const Colon = ":"
 const DescriptionTag = "description: "
+const ItemTag = "item: "
 const QueryParamsTag = "queryParameters:"
 const BodyTag = "body:"
 const ApplicationJsonTag = "application/json:"
 const AmfAdditionalProperties = "(amf-additionalProperties):"
 
 const NoMatchingLanguageMsg = "no matching Language setup"
+const ArrayIdentifier = "[]"
