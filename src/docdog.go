@@ -39,11 +39,11 @@ func main() {
 func SetEnvironment() {
 	sourcePath = flag.String("path", "./", "set path of source.")
 	outputPath = flag.String("out", "out.raml", "set file/path of the output file.")
-	fileType = flag.String("lang", ".java", "Limit the type of file example: .java (.php||.go||.rust)")
+	fileType = flag.String("lang", ".java", "Limit the type of file example: .java (spring||.php||.go||.rust)")
 	verbose = flag.Bool("verbose", true, "Debug true/false")
 	tabset = flag.Int("tabs", 4, "lenght of tabs")
 	flag.Parse()
-	if *fileType == ".spring" {
+	if *fileType == "spring" {
 		isSpringBoot = true
 		*fileType = ".java"
 	}
@@ -173,15 +173,24 @@ func CreateFromInstructionTag(line string) notations.Params {
 	InfoLog(constants.LogMsgFoundParamForEndpoint, line)
 	temp := helper.SeparateLineByTags(line)
 	param := &notations.Params{
-		Name:        temp[1],
+		Name:        temp[2],
+		VarType:     temp[1],
 		Description: helper.GetStringFromQouteLine(strings.TrimSpace(line)),
 		Notnull:     false,
+	}
+
+	if IsArrayType(temp[1]) {
+		param.IsArray = true
 	}
 
 	if notations.IsNotNullNotation(line) {
 		param.Notnull = true
 	}
 	return *param
+}
+
+func IsArrayType(line string) bool {
+	return strings.Contains(line, constants.ArrayIdentifier)
 }
 
 func GenerateOutput() {
@@ -223,7 +232,8 @@ func InfoLog(msg string, source string) {
 
 func fileBuilderRAML() {
 	outputData := []string{
-		"#RAML1.0",
+		"#%RAML 1.0",
+		"---",
 	}
 	outputData = append(outputData, BuildRAMLObjects()...)
 	outputData = append(outputData, BuildEndpoints()...)
@@ -249,13 +259,13 @@ func BuildRAMLObjects() []string {
 		outputData = append(outputData, constants.Types)
 		for _, object := range objectList {
 			outputData = append(outputData, StringWithTabs(1, ObjectNameBuilder(object.Name)+constants.Colon))
-			outputData = append(outputData, StringWithTabs(2, constants.TypeObject))
+			outputData = append(outputData, StringWithTabs(2, "properties:"))
 			for _, vars := range object.Variable {
 				outputData = append(outputData, StringWithTabs(3, vars.Name+constants.Colon))
 				if vars.IsArray {
 					outputData = append(outputData, StringWithTabs(4, constants.TypeTag+"array"))
-					outputData = append(outputData, StringWithTabs(5, "items:"))
-					outputData = append(outputData, StringWithTabs(6, constants.TypeTag+vars.Typ))
+					outputData = append(outputData, StringWithTabs(4, "items:"))
+					outputData = append(outputData, StringWithTabs(5, constants.TypeTag+vars.Typ))
 				} else {
 					outputData = append(outputData, StringWithTabs(4, constants.TypeTag+vars.Typ))
 				}
@@ -271,25 +281,35 @@ func BuildRAMLObjects() []string {
 func BuildEndpoints() []string {
 	outputData := []string{}
 	for _, endpoint := range endpointList {
-		outputData = append(outputData, endpoint.Url+constants.Colon)
+		outputData = append(outputData, strings.Replace("/"+endpoint.Url+constants.Colon, "//", "/", 1))
 		outputData = append(outputData, StringWithTabs(1, constants.DescriptionTag+endpoint.Description))
-		outputData = append(outputData, StringWithTabs(2, endpoint.HttpType+constants.Colon))
+		outputData = append(outputData, StringWithTabs(1, endpoint.HttpType+constants.Colon))
 		if len(endpoint.Params) != 0 {
-			outputData = append(outputData, StringWithTabs(3, constants.QueryParamsTag))
+			outputData = append(outputData, StringWithTabs(2, constants.QueryParamsTag))
 			for _, param := range endpoint.Params {
-				outputData = append(outputData, StringWithTabs(4, param.Name+constants.Colon))
-				outputData = append(outputData, StringWithTabs(5, constants.DescriptionTag+param.Description))
+				outputData = append(outputData, StringWithTabs(3, param.Name+constants.Colon))
+				outputData = append(outputData, StringWithTabs(4, constants.DescriptionTag+param.Description))
 				if param.Notnull {
-					outputData = append(outputData, StringWithTabs(5, constants.RequiredTagTrue))
+					outputData = append(outputData, StringWithTabs(4, constants.RequiredTagTrue))
+				}
+				if param.IsArray {
+					outputData = append(outputData, StringWithTabs(4, constants.ItemTag+"array"))
+					outputData = append(outputData,
+						StringWithTabs(5,
+							constants.TypeTag+strings.Replace(param.VarType, constants.ArrayIdentifier, "", 1)),
+					)
+				} else {
+					outputData = append(outputData, StringWithTabs(4, constants.ItemTag+"object"))
+					outputData = append(outputData, StringWithTabs(5, constants.TypeTag+param.VarType))
 				}
 			}
 		}
 		if len(endpoint.Objects) != 0 {
-			outputData = append(outputData, StringWithTabs(3, constants.BodyTag))
-			outputData = append(outputData, StringWithTabs(4, constants.ApplicationJsonTag))
-			outputData = append(outputData, StringWithTabs(5, constants.AmfAdditionalProperties))
+			outputData = append(outputData, StringWithTabs(2, constants.BodyTag))
+			outputData = append(outputData, StringWithTabs(3, constants.ApplicationJsonTag))
+			outputData = append(outputData, StringWithTabs(3, constants.AmfAdditionalProperties))
 			for _, param := range endpoint.Objects {
-				outputData = append(outputData, StringWithTabs(6, constants.TypeTag+param))
+				outputData = append(outputData, StringWithTabs(4, constants.TypeTag+param))
 			}
 		}
 	}

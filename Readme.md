@@ -21,7 +21,9 @@ If no `-out` is provided, the RAML File will generated as `out.raml` in the fold
 * `-lang` specify the programming-language, filetype of source (default is `.java`)
 
 ## other languages
-Actually DogDoc only provides JAVA. Golang and RUST are up on the wishlist.
+Actually DogDoc only provides JAVA and SpringBoot(java). Golang and RUST are up on the wishlist.
+For SpringBoot just add `-lang=spring`. In this case there are no comments on Endpoint needed. They will ignored and
+typical SpringBoot Commands will be used to generate the RAML Document.
 
 ## usage
 Every endpoint of your API must be Marked for DocDog to find it:
@@ -31,8 +33,8 @@ Example:
 /*
 @DD:ENDPOINT 'api/testpoint'
 @DD:DESCRIPTION 'important testendpoint'
-@DD:PARAM id 'id of user'
-@DD:PARAM token 'security-token' @DD:NOTNULL
+@DD:PARAM int id 'id of user'
+@DD:PARAM string token 'security-token' @DD:NOTNULL
 @DD:PAYLOAD testObject 'json object'
 @DD:TYPE post
 */
