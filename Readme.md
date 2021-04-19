@@ -1,6 +1,7 @@
 ## DocDog
 
 Creates RAML 1.0 files from existing source by Swen Kalski
+
 Twitter: https://twitter.com/KalskiSwen
 
 [![Go](https://github.com/skalski/docdog/actions/workflows/go.yml/badge.svg)](https://github.com/skalski/docdog/actions/workflows/go.yml)
