@@ -2,15 +2,18 @@ package spring
 
 import (
 	"docdog/src/notations"
-	"fmt"
+	"regexp"
 	"strings"
 )
 
 const arrayIdentifier = "[]"
 const listIdentifier = "List<"
 const mapping = "Mapping("
+const requestMapping = "@RequestMapping("
 const requestBody = "@RequestBody"
 const pathVariable = "@PathVariable"
+
+var methods = [4]string{"post", "get", "delete", "put"}
 
 func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 	tempVar := notations.TempEndpoint{
@@ -23,11 +26,22 @@ func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 	i := index + 1
 
 	for {
-		fmt.Println(wholeFile[i])
-		if strings.Contains(wholeFile[i], mapping) {
+		if strings.Contains(wholeFile[i], mapping) && !strings.Contains(wholeFile[i], requestMapping) {
 			tempVar.Url = GetStringFromQouteLine(wholeFile[i])
 			tempVar.HttpType = GetProtocolFormMappingTag(wholeFile[i])
 		}
+		if strings.Contains(wholeFile[i], requestMapping) {
+			tempVar.HttpType = FetchMethodFromMapping(wholeFile[i])
+			r, _ := regexp.Compile("value\\s*=\\s*\"(.+)\"")
+			if r.MatchString(wholeFile[i]) {
+				res := r.FindAllStringSubmatch(wholeFile[i], -1)
+				for i := range res {
+					tempVar.Url = GetStringFromQouteLine(strings.Join(res[i], ""))
+				}
+
+			}
+		}
+
 		ls := strings.Split(wholeFile[i], " ")
 		for i, command := range ls {
 			if strings.Contains(command, requestBody) {
@@ -50,6 +64,15 @@ func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 		i++
 	}
 	return tempVar
+}
+
+func FetchMethodFromMapping(s string) string {
+	for _, m := range methods {
+		if strings.Contains(strings.ToLower(s), strings.ToLower(m)) {
+			return m
+		}
+	}
+	return ""
 }
 
 func IsArrayType(line string) bool {

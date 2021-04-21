@@ -45,4 +45,18 @@ class EmployeeController {
   void deleteEmployee(@PathVariable Long id) {
     repository.deleteById(id);
   }
+
+
+    @RequestMapping(value = "/{deploymentId}/updateDeploymentConfig", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
+    @ResponseBody
+    public ConfigurationModel deploymentConfigRest(
+                                                                   @PathVariable final long deploymentId,
+                                                                   @Valid @RequestBody final RestDeploymentConfigurationModel restDeploymentConfigurationModel,
+                                                                   final BindingResult result
+                                                                   ) throws ValidationException {
+        if (result.hasErrors()) {
+            throw new ValidationException(result);
+        }
+        return updateDeploymentConfig();
+    }
 }

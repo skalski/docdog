@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"docdog/src/constants"
 	"docdog/src/helper"
-	"docdog/src/javalang"
+	"docdog/src/languageParser/javalang"
+	"docdog/src/languageParser/spring"
 	"docdog/src/notations"
-	"docdog/src/spring"
 	"errors"
 	"flag"
 	"fmt"
@@ -118,18 +118,20 @@ func AnalyseFile(file *os.File) {
 }
 
 func IsJavaVariableOrFunctionentry(line string) bool {
-	return strings.Contains(line, javalang.Private) || strings.Contains(line, javalang.Public)
+	return strings.Contains(line, javaLang.Private) || strings.Contains(line, javaLang.Public)
 }
 
 func CreateVariableStruct(line string, index int, wholeFile []string) (notations.Variable, error) {
 	if *fileType == ".java" {
-		return javalang.JavaVariableHandler(line, index, wholeFile)
+		return javaLang.JavaVariableHandler(line, index, wholeFile)
 	}
 
 	return notations.Variable{}, errors.New(constants.NoMatchingLanguageMsg)
 }
 
 func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
+	CheckLangTag(wholeFile)
+
 	tempVar := notations.TempEndpoint{
 		Url:         "",
 		Description: "",
@@ -140,6 +142,9 @@ func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 	i := index + 1
 
 	for {
+		if i == len(wholeFile) {
+			break
+		}
 		if notations.CommentEndTag(wholeFile[i]) {
 			break
 		}
@@ -346,6 +351,14 @@ func StringWithTabs(count int, text string) string {
 		i++
 	}
 	return strings.Join(tabs, "") + text
+}
+
+func CheckLangTag(wholeFile []string) bool {
+	if !isSpringBoot && strings.Contains(strings.Join(wholeFile, ""), "springframework") {
+		fmt.Println("WARING: Found SpringBoot you may should use -lang=spring ")
+		return false
+	}
+	return true
 }
 
 func WelcomeMsg() {

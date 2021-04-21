@@ -1,4 +1,4 @@
-package javalang
+package javaLang
 
 import (
 	"docdog/src/helper"
