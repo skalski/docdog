@@ -12,6 +12,7 @@ const mapping = "Mapping("
 const requestMapping = "@RequestMapping("
 const requestBody = "@RequestBody"
 const pathVariable = "@PathVariable"
+const finalTag = "final"
 
 var methods = [4]string{"post", "get", "delete", "put"}
 
@@ -45,14 +46,16 @@ func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 		ls := strings.Split(wholeFile[i], " ")
 		for i, command := range ls {
 			if strings.Contains(command, requestBody) {
-				tempVar.Objects = append(tempVar.Objects, ls[i+1])
+				pos := IsFinal(ls[i+1], i)
+				tempVar.Objects = append(tempVar.Objects, ls[pos])
 			}
 			if strings.Contains(command, pathVariable) {
+				pos := IsFinal(ls[i+1], i)
 				params := notations.Params{
 					Name:    strings.Replace(ls[i+2], ")", "", 1),
-					VarType: ls[i+1],
+					VarType: ls[pos],
 				}
-				if IsArrayType(ls[i+1]) {
+				if IsArrayType(ls[pos]) {
 					params.IsArray = true
 				}
 				tempVar.Params = append(tempVar.Params, params)
@@ -64,6 +67,13 @@ func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 		i++
 	}
 	return tempVar
+}
+
+func IsFinal(s string, i int) int {
+	if strings.Contains(s, finalTag) {
+		return i + 2
+	}
+	return i + 1
 }
 
 func FetchMethodFromMapping(s string) string {

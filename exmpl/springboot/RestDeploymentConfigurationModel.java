@@ -5,7 +5,7 @@ import that;
 
 @Getter
 @Setter
-public class TestObject {
+public class RestDeploymentConfigurationModel {
 
 public String somePublic = "test";
 
@@ -22,7 +22,7 @@ private int someElse;
 */
 private bool ignoreThis;
 
-private List<OtherObject> testList;
+private List<otherObject> testList;
 
 private String[] cars = {"Volvo", "BMW", "Ford", "Mazda"};
 

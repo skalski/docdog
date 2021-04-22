@@ -312,9 +312,8 @@ func BuildEndpoints() []string {
 		if len(endpoint.Objects) != 0 {
 			outputData = append(outputData, StringWithTabs(2, constants.BodyTag))
 			outputData = append(outputData, StringWithTabs(3, constants.ApplicationJsonTag))
-			outputData = append(outputData, StringWithTabs(3, constants.AmfAdditionalProperties))
 			for _, param := range endpoint.Objects {
-				outputData = append(outputData, StringWithTabs(4, constants.TypeTag+param))
+				outputData = append(outputData, StringWithTabs(4, constants.SchemaTag+param))
 			}
 		}
 	}
