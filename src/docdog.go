@@ -32,7 +32,7 @@ func main() {
 	WelcomeMsg()
 	SetEnvironment()
 	ScanFiles()
-	GenerateOutput()
+	Output()
 	GoodbyeMsg()
 }
 
@@ -85,13 +85,13 @@ func AnalyseFile(file *os.File) {
 	if err != nil {
 		fmt.Println(constants.CannotOpenFiles)
 	}
-	temp := BytesToStringArrayByLinebreaks(b)
+	temp := helper.BytesToStringArrayByLinebreaks(b)
 	if notations.IsController(b) {
 		InfoLog(constants.LogMsgFoundController, file.Name())
 		for i, s := range temp {
-			if notations.IsEndpointNotation(s) {
+			if notations.IsEp(s) {
 				if !isSpringBoot {
-					tempEndpointList = append(tempEndpointList, CreateApiEndpoint(i-1, temp))
+					tempEndpointList = append(tempEndpointList, CreateApiEp(i-1, temp))
 				} else {
 					tempEndpointList = append(tempEndpointList, spring.CreateApiEndpoint(i-1, temp))
 				}
@@ -101,7 +101,7 @@ func AnalyseFile(file *os.File) {
 		InfoLog(constants.LogMsgFoundPossibleObject, file.Name())
 		var variableList []notations.Variable
 		for i, s := range temp {
-			if IsJavaVariableOrFunctionentry(s) {
+			if IsJavaVariableOrFunctionEntry(s) {
 				if !notations.HasIgnoreNotation(i, temp) {
 					variable, err := CreateVariableStruct(s, i, temp)
 					if err == nil {
@@ -117,7 +117,7 @@ func AnalyseFile(file *os.File) {
 	}
 }
 
-func IsJavaVariableOrFunctionentry(line string) bool {
+func IsJavaVariableOrFunctionEntry(line string) bool {
 	return strings.Contains(line, javaLang.Private) || strings.Contains(line, javaLang.Public)
 }
 
@@ -129,7 +129,7 @@ func CreateVariableStruct(line string, index int, wholeFile []string) (notations
 	return notations.Variable{}, errors.New(constants.NoMatchingLanguageMsg)
 }
 
-func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
+func CreateApiEp(index int, wholeFile []string) notations.TempEndpoint {
 	CheckLangTag(wholeFile)
 
 	tempVar := notations.TempEndpoint{
@@ -148,7 +148,7 @@ func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 		if notations.CommentEndTag(wholeFile[i]) {
 			break
 		}
-		if notations.IsEndpointNotation(wholeFile[i]) {
+		if notations.IsEp(wholeFile[i]) {
 			InfoLog(constants.LogMsgFoundUrl, wholeFile[i])
 			tempVar.Url = helper.GetStringFromQouteLine(wholeFile[i])
 		}
@@ -162,7 +162,11 @@ func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 		}
 		if notations.IsParamNotation(wholeFile[i]) {
 			InfoLog(constants.LogMsgFoundParam, wholeFile[i])
-			tempVar.Params = append(tempVar.Params, CreateFromInstructionTag(wholeFile[i]))
+			tempVar.Params = append(tempVar.Params, CreatePrm(wholeFile[i]))
+		}
+		if notations.IsResponseNotation(wholeFile[i]) {
+			InfoLog(constants.LogMsgFoundResponse, wholeFile[i])
+			tempVar.Response = append(tempVar.Response, CreateRes(wholeFile[i]))
 		}
 		if notations.IsPayloadNotation(wholeFile[i]) {
 			InfoLog(constants.LogMsgFoundPayload, wholeFile[i])
@@ -174,59 +178,68 @@ func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 	return tempVar
 }
 
-func CreateFromInstructionTag(line string) notations.Params {
-	InfoLog(constants.LogMsgFoundParamForEndpoint, line)
-	temp := helper.SeparateLineByTags(line)
+func CreatePrm(l string) notations.Params {
+	InfoLog(constants.LogMsgFoundParamForEndpoint, l)
+	t := helper.SeparateLineByTags(l)
 	param := &notations.Params{
-		Name:        temp[2],
-		VarType:     temp[1],
-		Description: helper.GetStringFromQouteLine(strings.TrimSpace(line)),
+		Name:        t[2],
+		VarType:     t[1],
+		Description: helper.GetStringFromQouteLine(strings.TrimSpace(l)),
 		Notnull:     false,
 	}
 
-	if IsArrayType(temp[1]) {
+	if IsArray(t[1]) {
 		param.IsArray = true
 	}
 
-	if notations.IsNotNullNotation(line) {
+	if notations.IsNotNullNotation(l) {
 		param.Notnull = true
 	}
 	return *param
 }
 
-func IsArrayType(line string) bool {
+func CreateRes(l string) notations.Response {
+	t := helper.SeparateLineByTags(l)
+	rsp := &notations.Response{HttpCode: t[1]}
+	rsp.Type = t[2]
+	if t[2] == constants.Jsn && len(t) > 2 {
+		rsp.ObjectType = t[3]
+	}
+	return *rsp
+}
+
+func IsArray(line string) bool {
 	return strings.Contains(line, constants.ArrayIdentifier)
 }
 
-func GenerateOutput() {
+func Output() {
 	fmt.Println(constants.StartCreatingAPIStructure)
-	GenerateEndpointsArrayStructure()
+	GenEndpointsArrayStruc()
 	fileBuilderRAML()
 	fmt.Println(constants.FinishedCreatingAPIStructure)
 }
 
-func GenerateEndpointsArrayStructure() {
-	for _, tempEndpoint := range tempEndpointList {
-		endpoint := notations.Endpoint{
-			Url:         tempEndpoint.Url,
-			Description: tempEndpoint.Description,
-			HttpType:    tempEndpoint.HttpType,
+func GenEndpointsArrayStruc() {
+	for _, e := range tempEndpointList {
+		es := notations.Endpoint{
+			Url:         e.Url,
+			Description: e.Description,
+			HttpType:    e.HttpType,
 			Params:      nil,
 			Variable:    nil,
 			Objects:     nil,
 		}
-		for _, params := range tempEndpoint.Params {
-			endpoint.Params = append(endpoint.Params, params)
+		for _, params := range e.Params {
+			es.Params = append(es.Params, params)
 		}
-		for _, object := range tempEndpoint.Objects {
-			endpoint.Objects = append(endpoint.Objects, object)
+		for _, object := range e.Objects {
+			es.Objects = append(es.Objects, object)
 		}
-		endpointList = append(endpointList, endpoint)
+		for _, object := range e.Response {
+			es.Response = append(es.Response, object)
+		}
+		endpointList = append(endpointList, es)
 	}
-}
-
-func BytesToStringArrayByLinebreaks(data []byte) []string {
-	return strings.Split(strings.ReplaceAll(string(data[:]), "\r\n", "\n"), "\n")
 }
 
 func InfoLog(msg string, source string) {
@@ -314,6 +327,19 @@ func BuildEndpoints() []string {
 			outputData = append(outputData, StringWithTabs(3, constants.ApplicationJsonTag))
 			for _, param := range endpoint.Objects {
 				outputData = append(outputData, StringWithTabs(4, constants.SchemaTag+param))
+			}
+		}
+		if len(endpoint.Response) != 0 {
+			outputData = append(outputData, StringWithTabs(2, constants.Rsp))
+			for _, rsp := range endpoint.Response {
+				outputData = append(outputData, StringWithTabs(3, rsp.HttpCode+":"))
+				outputData = append(outputData, StringWithTabs(4, constants.BodyTag))
+				if strings.Contains(rsp.Type, constants.Txt) {
+					outputData = append(outputData, StringWithTabs(5, constants.ApplicationDiverse))
+				} else {
+					outputData = append(outputData, StringWithTabs(5, constants.ApplicationJsonTag))
+					outputData = append(outputData, StringWithTabs(6, constants.SchemaTag+rsp.ObjectType))
+				}
 			}
 		}
 	}

@@ -19,6 +19,8 @@ private int someWhat = 1;
         @DD:PARAM string token 'security-token' @DD:NOTNULL
         @DD:PAYLOAD TestObject 'json object'
         @DD:TYPE post
+        @DD:RESPONSE 200 json ResponseObject
+        @DD:RESPONSE 500 text
     */
     function testController(some input stuff){
         String test = "12334"

@@ -18,3 +18,7 @@ func GetStringFromQouteLine(str string) (result string) {
 func SeparateLineByTags(line string) []string {
 	return strings.Split(strings.TrimSpace(line), " ")
 }
+
+func BytesToStringArrayByLinebreaks(data []byte) []string {
+	return strings.Split(strings.ReplaceAll(string(data[:]), "\r\n", "\n"), "\n")
+}

@@ -1,6 +1,6 @@
 package constants
 
-const Version = "0.2.2 BETA"
+const Version = "0.3 BETA"
 const FileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
 
 const StartGatheringFiles = "- start gathering of Files ... please stand by!"
@@ -14,11 +14,11 @@ const LogMsgFoundPossibleObject = "Found possible Object: "
 const LogMsgFoundUrl = "Found Url at :"
 const LogMsgFoundConnectioType = "Found Connection Type at :"
 const LogMsgFoundParam = "Found Param at :"
+const LogMsgFoundResponse = "Found Response at :"
 const LogMsgFoundPayload = "Found Payload at :"
 const LogMsgFoundParamForEndpoint = "Produced Param for current Endpoint :"
 
 const Types = "types:"
-const TypeObject = "type: object"
 const TypeTag = "type: "
 const RequiredTagTrue = "required: true"
 const Colon = ":"
@@ -27,7 +27,11 @@ const ItemTag = "item: "
 const QueryParamsTag = "queryParameters:"
 const BodyTag = "body:"
 const ApplicationJsonTag = "application/json:"
+const ApplicationDiverse = "(*/*):"
 const SchemaTag = "schema: "
+const Rsp = "responses:"
+const Jsn = "json"
+const Txt = "text"
 
 const NoMatchingLanguageMsg = "no matching Language setup"
 const ArrayIdentifier = "[]"

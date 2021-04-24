@@ -11,6 +11,7 @@ var descriptionIdentifier = "@DD:DESCRIPTION"
 var notNullIdentifier = "@DD:NOTNULL"
 var typeIdentifier = "@DD:TYPE"
 var ignoreIdentifier = "@DD:IGNORE"
+var responseIdentifier = "@DD:RESPONSE"
 
 var springEndpointController = "@RestController"
 var springMappingTagIdentifier = "Mapping("
@@ -36,12 +37,19 @@ type Params struct {
 	IsArray     bool
 }
 
+type Response struct {
+	HttpCode   string
+	Type       string
+	ObjectType string
+}
+
 type Endpoint struct {
 	Url         string
 	Description string
 	HttpType    string
 	Params      []Params
 	Variable    []Variable
+	Response    []Response
 	Objects     []string
 }
 
@@ -50,11 +58,12 @@ type TempEndpoint struct {
 	Description string
 	HttpType    string
 	Params      []Params
+	Response    []Response
 	Objects     []string
 }
 
 func IsController(line []byte) bool {
-	return IsEndpointNotation(string(line[:])) || strings.Contains(string(line[:]), springEndpointController)
+	return IsEp(string(line[:])) || strings.Contains(string(line[:]), springEndpointController)
 }
 
 func IsIgnoreNotation(line string) bool {
@@ -72,7 +81,7 @@ func HasIgnoreNotation(index int, wholeFile []string) bool {
 	return false
 }
 
-func IsEndpointNotation(line string) bool {
+func IsEp(line string) bool {
 	return strings.Contains(line, endPointIdentifier) || strings.Contains(line, springMappingTagIdentifier)
 }
 
@@ -98,4 +107,8 @@ func IsConnectionMethodNotation(line string) bool {
 
 func CommentEndTag(line string) bool {
 	return strings.Contains(line, "*/")
+}
+
+func IsResponseNotation(line string) bool {
+	return strings.Contains(line, responseIdentifier)
 }

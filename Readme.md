@@ -35,9 +35,10 @@ Actually DogDoc only provides JAVA and SpringBoot(java). Golang and RUST are up 
 For SpringBoot just add `-lang=spring`. In this case there are no comments on Endpoint needed. They will ignored and
 typical SpringBoot Commands will be used to generate the RAML Document.
 
-## usage
+## How to use Comment-Annotations
 You can see, how the Comments for DocDog are used in the `\exmpl\java` folder.
 
+### API Endpoints
 Every endpoint of your API must be Marked for DocDog to find it:
 
 Example:
@@ -49,9 +50,21 @@ Example:
 @DD:PARAM string token 'security-token' @DD:NOTNULL
 @DD:PAYLOAD testObject 'json object'
 @DD:TYPE post
+@DD:RESPONSE 200 json ResponseObject
+@DD:RESPONSE 500 text
 */
 ```
 
+The types of annotations that could be used for Endpoints.
+* `@DD:ENDPOINT '<string>'` Declare an Endpoint and use <string> as part of URL
+* `@DD:DESCRIPTION '<string>'` Set a description for this endpoint
+* `@DD:PARAM <dataTyp> <varName> '<string>' <notNull:optional>` Add a param for the endpoint (@DD:NOTNULL add a required-tag)
+* `@DD:PAYLOAD <dataTyp> '<string>'` add a body and a description for this payload
+* `@DD:TYPE post` http request type (post, get, delete ..)
+* `@DD:RESPONSE <int> <json/text> <dataType:when json>` add a type of response and his type. If json is used you must provide a datatype.
+
+
+### Objects 
 Objects will be found by DocDog himself.
 You can markup variables in Objects too.
 
@@ -76,4 +89,5 @@ private bool ignoreThis;
 
 Actually I got no idea.
 For private this will stay free.
-May I take fee later for companies!
+This means - you can use it, fork it or whatever. If the source is used elsewhere the original developer (me) must be mentiond.
+If it is used in a commercial software you must pay me... that's simple :)
