@@ -22,18 +22,26 @@ var outputPath *string
 var fileType *string
 var verbose *bool
 var tabset *int
+var verboseOutput *bool
 var isSpringBoot = false
+var wl = 0
+var cd string
 
 var objectList []notations.Objects
 var endpointList []notations.Endpoint
 var tempEndpointList []notations.TempEndpoint
 
 func main() {
-	WelcomeMsg()
+	defer RecoverPanic("parse panic")
 	SetEnvironment()
+	if !*verboseOutput {
+		WelcomeMsg()
+	}
 	ScanFiles()
 	Output()
-	GoodbyeMsg()
+	if !*verboseOutput {
+		GoodbyeMsg()
+	}
 }
 
 func SetEnvironment() {
@@ -41,22 +49,29 @@ func SetEnvironment() {
 	outputPath = flag.String("out", "out.raml", "set file/path of the output file.")
 	fileType = flag.String("lang", ".java", "Limit the type of file example: .java (spring||.php||.go||.rust)")
 	verbose = flag.Bool("verbose", true, "Debug true/false")
+	verboseOutput = flag.Bool("print", false, "Direct screen output for piping")
+
 	tabset = flag.Int("tabs", 4, "lenght of tabs")
 	flag.Parse()
 	if *fileType == "spring" {
 		isSpringBoot = true
 		*fileType = ".java"
 	}
-
-	fmt.Printf("✓ Set filetype to: %s \n", *fileType)
-	fmt.Printf("✓ Set path to: %s \n", *sourcePath)
-	fmt.Printf("✓ Set output to: %s \n", *outputPath)
+	if !*verboseOutput {
+		fmt.Printf("✓ Set filetype to: %s \n", *fileType)
+		fmt.Printf("✓ Set path to: %s \n", *sourcePath)
+		fmt.Printf("✓ Set output to: %s \n", *outputPath)
+	}
 }
 
 func ScanFiles() {
-	fmt.Println(constants.StartGatheringFiles)
+	if !*verboseOutput {
+		fmt.Println(constants.StartGatheringFiles)
+	}
 	GenerateModel(*sourcePath)
-	fmt.Println(constants.FinishedGatheringFiles)
+	if !*verboseOutput {
+		fmt.Println(constants.FinishedGatheringFiles)
+	}
 }
 
 func GenerateModel(path string) {
@@ -86,6 +101,7 @@ func AnalyseFile(file *os.File) {
 		fmt.Println(constants.CannotOpenFiles)
 	}
 	temp := helper.BytesToStringArrayByLinebreaks(b)
+	cd = file.Name()
 	if notations.IsController(b) {
 		InfoLog(constants.LogMsgFoundController, file.Name())
 		for i, s := range temp {
@@ -142,6 +158,7 @@ func CreateApiEp(index int, wholeFile []string) notations.TempEndpoint {
 	i := index + 1
 
 	for {
+		wl = i
 		if i == len(wholeFile) {
 			break
 		}
@@ -213,10 +230,14 @@ func IsArray(line string) bool {
 }
 
 func Output() {
-	fmt.Println(constants.StartCreatingAPIStructure)
+	if !*verboseOutput {
+		fmt.Println(constants.StartCreatingAPIStructure)
+	}
 	GenEndpointsArrayStruc()
 	fileBuilderRAML()
-	fmt.Println(constants.FinishedCreatingAPIStructure)
+	if !*verboseOutput {
+		fmt.Println(constants.FinishedCreatingAPIStructure)
+	}
 }
 
 func GenEndpointsArrayStruc() {
@@ -261,14 +282,20 @@ func fileBuilderRAML() {
 	if err != nil {
 		log.Fatalf("failed creating file: %s", err)
 	}
+	if !*verboseOutput {
+		datawriter := bufio.NewWriter(file)
+		for _, data := range outputData {
+			_, _ = datawriter.WriteString(data + "\n")
+		}
 
-	datawriter := bufio.NewWriter(file)
+		_ = datawriter.Flush()
+		_ = file.Close()
+		return
+	}
 	for _, data := range outputData {
-		_, _ = datawriter.WriteString(data + "\n")
+		fmt.Println(data)
 	}
 
-	_ = datawriter.Flush()
-	_ = file.Close()
 }
 
 func BuildRAMLObjects() []string {
@@ -400,4 +427,16 @@ func GoodbyeMsg() {
 	fmt.Println("  /  \\ /  \\")
 	fmt.Println("")
 	fmt.Println("Thanks for using DocDog")
+}
+
+func RecoverPanic(msg string) {
+	if r := recover(); r != nil {
+		if msg != "" {
+			if wl == 0 {
+				fmt.Printf("There was a error while parsing on\n %s \n\n", cd)
+			} else {
+				fmt.Printf("There was a error while parsing at line %d on\n %s\n\n", wl, cd)
+			}
+		}
+	}
 }

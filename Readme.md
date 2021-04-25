@@ -29,6 +29,9 @@ If no `-out` is provided, the RAML File will generated as `out.raml` in the fold
 * `-verbose` verbose-mode (default:false)
 * `-tabs` specify the length of space that represent a tab (default:4)
 * `-lang` specify the programming-language, filetype of source (default is `.java`)
+* `-print` print the output directly to the cli for piping (no file will be created)
+
+If `-print=true` the `-out` flag will be ignored. No output file will be created.
 
 ## other languages
 Actually DogDoc only provides JAVA and SpringBoot(java). Golang and RUST are up on the wishlist.

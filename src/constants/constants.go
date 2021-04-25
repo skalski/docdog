@@ -1,6 +1,6 @@
 package constants
 
-const Version = "0.3 BETA"
+const Version = "0.4 BETA"
 const FileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
 
 const StartGatheringFiles = "- start gathering of Files ... please stand by!"
