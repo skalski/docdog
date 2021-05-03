@@ -4,7 +4,7 @@ import that;
 
 @Getter
 @Setter
-public class OtherObject {
+class OtherObject implements OtherAbsObject {
 
 public String somePublic = "test";
 

@@ -1,6 +1,6 @@
 package constants
 
-const Version = "0.4 BETA"
+const Version = "0.5 BETA"
 const FileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
 
 const StartGatheringFiles = "- start gathering of Files ... please stand by!"
@@ -10,6 +10,7 @@ const FinishedCreatingAPIStructure = "✓ finished with creating. Thanks for usi
 const CannotOpenFiles = "Cannot open File"
 
 const LogMsgFoundController = "Found Controller:"
+const LogMsgFoundAbstrct = "Found Abstract Class:"
 const LogMsgFoundPossibleObject = "Found possible Object: "
 const LogMsgFoundUrl = "Found Url at :"
 const LogMsgFoundConnectioType = "Found Connection Type at :"
