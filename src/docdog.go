@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"docdog/src/constants"
 	"docdog/src/helper"
-	"docdog/src/languageParser/javalang"
+	javaLang "docdog/src/languageParser/javalang"
 	"docdog/src/languageParser/spring"
 	"docdog/src/notations"
 	"errors"
@@ -28,6 +28,7 @@ var wl = 0
 var cd string
 
 var objectList []notations.Objects
+var abstractList []notations.Abstract
 var endpointList []notations.Endpoint
 var tempEndpointList []notations.TempEndpoint
 
@@ -102,6 +103,7 @@ func AnalyseFile(file *os.File) {
 	}
 	temp := helper.BytesToStringArrayByLinebreaks(b)
 	cd = file.Name()
+	// test if it's a possible controller or a object
 	if notations.IsController(b) {
 		InfoLog(constants.LogMsgFoundController, file.Name())
 		for i, s := range temp {
@@ -114,6 +116,11 @@ func AnalyseFile(file *os.File) {
 			}
 		}
 	} else {
+		// if object is an interface - we ignore it
+		if javaLang.IsItrf(temp) && *fileType == ".java" {
+			return
+		}
+
 		InfoLog(constants.LogMsgFoundPossibleObject, file.Name())
 		var variableList []notations.Variable
 		for i, s := range temp {
@@ -126,10 +133,20 @@ func AnalyseFile(file *os.File) {
 				}
 			}
 		}
-		objectList = append(objectList, notations.Objects{
-			Name:     file.Name(),
-			Variable: variableList,
-		})
+		if javaLang.IsAbstrc(temp) {
+			// when Object is an abstract class, we store if in a special List
+			InfoLog(constants.LogMsgFoundAbstrct, file.Name())
+			abstractList = append(abstractList, notations.Abstract{
+				Name:     file.Name(),
+				Variable: variableList,
+			})
+		} else {
+			objectList = append(objectList, notations.Objects{
+				Name:       file.Name(),
+				Variable:   variableList,
+				Implements: javaLang.ChckImpl(temp),
+			})
+		}
 	}
 }
 
@@ -250,15 +267,9 @@ func GenEndpointsArrayStruc() {
 			Variable:    nil,
 			Objects:     nil,
 		}
-		for _, params := range e.Params {
-			es.Params = append(es.Params, params)
-		}
-		for _, object := range e.Objects {
-			es.Objects = append(es.Objects, object)
-		}
-		for _, object := range e.Response {
-			es.Response = append(es.Response, object)
-		}
+		es.Params = append(es.Params, e.Params...)
+		es.Objects = append(es.Objects, e.Objects...)
+		es.Response = append(es.Response, e.Response...)
 		endpointList = append(endpointList, es)
 	}
 }
@@ -303,6 +314,12 @@ func BuildRAMLObjects() []string {
 	if len(objectList) != 0 {
 		outputData = append(outputData, constants.Types)
 		for _, object := range objectList {
+			for _, a := range abstractList {
+				if ObjectNameBuilder(a.Name) == object.Implements {
+					object.Variable = append(object.Variable, a.Variable...)
+				}
+			}
+
 			outputData = append(outputData, StringWithTabs(1, ObjectNameBuilder(object.Name)+constants.Colon))
 			outputData = append(outputData, StringWithTabs(2, "properties:"))
 			for _, vars := range object.Variable {

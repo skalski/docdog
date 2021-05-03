@@ -9,6 +9,9 @@ import (
 
 const Private = "private"
 const Public = "public"
+const Abstract = "abstract"
+const Implements = "implements"
+const Interface = "interface"
 
 const arrayIdentifier = "[]"
 const listIdentifier = "List<"
@@ -58,4 +61,36 @@ func IsArrayType(line string) bool {
 
 func CreateArrayType(line string) string {
 	return strings.Replace(strings.Replace(strings.Replace(line, ">", "", 1), listIdentifier, "", 1), arrayIdentifier, "", 1)
+}
+
+func ChckImpl(fls []string) string {
+	for _, s := range fls {
+		if strings.Contains(s, Implements) {
+			temp := helper.SeparateLineByTags(s)
+			for i, s := range temp {
+				if strings.Contains(s, Implements) {
+					return temp[i+1]
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func IsItrf(fls []string) bool {
+	for _, s := range fls {
+		if strings.Contains(s, Interface) {
+			return true
+		}
+	}
+	return false
+}
+
+func IsAbstrc(fls []string) bool {
+	for _, s := range fls {
+		if strings.Contains(s, Abstract) {
+			return true
+		}
+	}
+	return false
 }
