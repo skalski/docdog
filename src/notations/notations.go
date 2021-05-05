@@ -17,14 +17,17 @@ var springEndpointController = "@RestController"
 var springMappingTagIdentifier = "Mapping("
 
 type Objects struct {
-	Name       string
-	Variable   []Variable
-	Implements string
+	Name        string
+	PackageName string
+	Variable    []Variable
+	Implements  string
+	Imports     []string
 }
 
 type Abstract struct {
-	Name     string
-	Variable []Variable
+	PackageName string
+	Name        string
+	Variable    []Variable
 }
 
 type Variable struct {

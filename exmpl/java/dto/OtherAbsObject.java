@@ -1,4 +1,4 @@
-package something.packages
+package com.test.dto;
 
 import that;
 

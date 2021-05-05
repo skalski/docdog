@@ -1,15 +1,19 @@
 package javaLang
 
 import (
+	"docdog/src/constants"
 	"docdog/src/helper"
 	"docdog/src/notations"
 	"errors"
+	"fmt"
 	"strings"
 )
 
 const Private = "private"
 const Public = "public"
 const Abstract = "abstract"
+const Packg = "package"
+const ImpTag = "import"
 const Implements = "implements"
 const Interface = "interface"
 
@@ -55,6 +59,64 @@ func JavaVariableHandler(line string, index int, wholeFile []string) (notations.
 	return tempVar, errors.New("is function")
 }
 
+func CreateApiEp(index int, wholeFile []string, verbose *bool, isSpringBoot bool, wl *int) notations.TempEndpoint {
+	CheckLangTag(wholeFile, isSpringBoot)
+
+	tempVar := notations.TempEndpoint{
+		Url:         "",
+		Description: "",
+		HttpType:    "",
+		Params:      nil,
+		Objects:     nil,
+	}
+	i := index + 1
+
+	for {
+		*wl = i
+		if i == len(wholeFile) {
+			break
+		}
+		if notations.CommentEndTag(wholeFile[i]) {
+			break
+		}
+		if notations.IsEp(wholeFile[i]) {
+			helper.InfoLog(constants.LogMsgFoundUrl, wholeFile[i], verbose)
+			tempVar.Url = helper.GetStringFromQouteLine(wholeFile[i])
+		}
+		if notations.IsDescriptionNotation(wholeFile[i]) {
+			tempVar.Description = helper.GetStringFromQouteLine(wholeFile[i])
+		}
+		if notations.IsConnectionMethodNotation(wholeFile[i]) {
+			helper.InfoLog(constants.LogMsgFoundConnectioType, wholeFile[i], verbose)
+			tempPayload := helper.SeparateLineByTags(wholeFile[i])
+			tempVar.HttpType = tempPayload[1]
+		}
+		if notations.IsParamNotation(wholeFile[i]) {
+			helper.InfoLog(constants.LogMsgFoundParam, wholeFile[i], verbose)
+			tempVar.Params = append(tempVar.Params, CreatePrm(wholeFile[i], verbose))
+		}
+		if notations.IsResponseNotation(wholeFile[i]) {
+			helper.InfoLog(constants.LogMsgFoundResponse, wholeFile[i], verbose)
+			tempVar.Response = append(tempVar.Response, CreateRes(wholeFile[i]))
+		}
+		if notations.IsPayloadNotation(wholeFile[i]) {
+			helper.InfoLog(constants.LogMsgFoundPayload, wholeFile[i], verbose)
+			tempPayload := helper.SeparateLineByTags(wholeFile[i])
+			tempVar.Objects = append(tempVar.Objects, tempPayload[1])
+		}
+		i++
+	}
+	return tempVar
+}
+
+func CheckLangTag(wholeFile []string, isSpringBoot bool) bool {
+	if !isSpringBoot && strings.Contains(strings.Join(wholeFile, ""), "springframework") {
+		fmt.Println("WARING: Found SpringBoot you may should use -lang=spring ")
+		return false
+	}
+	return true
+}
+
 func IsArrayType(line string) bool {
 	return strings.Contains(line, arrayIdentifier) || strings.Contains(line, listIdentifier)
 }
@@ -93,4 +155,60 @@ func IsAbstrc(fls []string) bool {
 		}
 	}
 	return false
+}
+
+func PackgName(fls []string) string {
+	for _, s := range fls {
+		if strings.Contains(s, Packg) {
+			t := helper.SeparateLineByTags(s)
+			return strings.Replace(t[1], ";", "", 1)
+		}
+	}
+	return ""
+}
+
+func Imp(fls []string) []string {
+	var imps []string
+	for _, s := range fls {
+		if strings.Contains(s, ImpTag) {
+			t := helper.SeparateLineByTags(s)
+			imps = append(imps, strings.Replace(t[1], ";", "", 1))
+		}
+	}
+	imps = append(imps, PackgName(fls))
+	return imps
+}
+
+func CreatePrm(l string, verbose *bool) notations.Params {
+	helper.InfoLog(constants.LogMsgFoundParamForEndpoint, l, verbose)
+	t := helper.SeparateLineByTags(l)
+	param := &notations.Params{
+		Name:        t[2],
+		VarType:     t[1],
+		Description: helper.GetStringFromQouteLine(strings.TrimSpace(l)),
+		Notnull:     false,
+	}
+
+	if IsArray(t[1]) {
+		param.IsArray = true
+	}
+
+	if notations.IsNotNullNotation(l) {
+		param.Notnull = true
+	}
+	return *param
+}
+
+func CreateRes(l string) notations.Response {
+	t := helper.SeparateLineByTags(l)
+	rsp := &notations.Response{HttpCode: t[1]}
+	rsp.Type = t[2]
+	if t[2] == constants.Jsn && len(t) > 2 {
+		rsp.ObjectType = t[3]
+	}
+	return *rsp
+}
+
+func IsArray(line string) bool {
+	return strings.Contains(line, constants.ArrayIdentifier)
 }

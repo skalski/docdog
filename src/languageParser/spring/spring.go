@@ -1,7 +1,9 @@
 package spring
 
 import (
+	"docdog/src/helper"
 	"docdog/src/notations"
+	"errors"
 	"regexp"
 	"strings"
 )
@@ -14,7 +16,52 @@ const requestBody = "@RequestBody"
 const pathVariable = "@PathVariable"
 const finalTag = "final"
 
+var notnull = []string{"@NotNull", "@NotBlank", "@NotEmpty"}
+var ignore = []string{"@JsonIgnore", "@Ignore"}
 var methods = [4]string{"post", "get", "delete", "put"}
+
+func SBVariableHandler(line string, index int, wholeFile []string) (notations.Variable, error) {
+	temp := helper.SeparateLineByTags(line)
+
+	tempVar := notations.Variable{
+		Name:        "",
+		Description: "",
+		Typ:         "",
+		Notnull:     false,
+		IsArray:     false,
+	}
+
+	if !strings.Contains(line, "(") && !strings.Contains(line, "class") && !strings.Contains(line, "{") {
+		if len(temp) <= 2 {
+			return tempVar, errors.New("is malformed function or variable")
+		}
+		tempVar.Name = strings.ReplaceAll(temp[2], ";", "")
+		if IsArrayType(line) {
+			tempVar.IsArray = true
+			tempVar.Typ = CreateArrayType(temp[1])
+		} else {
+			tempVar.Typ = temp[1]
+		}
+		i := 1
+		for i <= 2 {
+			_, foundIgnore := helper.Find(ignore, wholeFile[index-i])
+			_, foundNotNull := helper.Find(notnull, wholeFile[index-i])
+			if foundNotNull && wholeFile[index-i] != "" {
+				tempVar.Notnull = true
+			}
+			if foundIgnore && wholeFile[index-i] != "" {
+				return tempVar, errors.New("is ignored")
+			}
+			i++
+		}
+		return tempVar, nil
+	}
+	return tempVar, errors.New("is function")
+}
+
+func CreateArrayType(line string) string {
+	return strings.Replace(strings.Replace(strings.Replace(line, ">", "", 1), listIdentifier, "", 1), arrayIdentifier, "", 1)
+}
 
 func CreateApiEndpoint(index int, wholeFile []string) notations.TempEndpoint {
 	tempVar := notations.TempEndpoint{

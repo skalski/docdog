@@ -1,10 +1,10 @@
-package something
+package com.test.controller;
 
 import this;
 import that;
 
 @Controller
-public class someController {
+public class OtherController {
 
 
 privat String someVar;

@@ -1,7 +1,8 @@
 package constants
 
-const Version = "0.5 BETA"
+const Version = "0.6 BETA"
 const FileReadIssue = "File Structure was changes during run or we run into a permission issue. Exit."
+const DonationTag = "This nice Program contributed by Swen Kalski. Help Improve this Software by making contributions or donations.\n For more Information use/follow Twitter @KalskiSwen or send a Email to kalski.swen+docdog@gmail.com."
 
 const StartGatheringFiles = "- start gathering of Files ... please stand by!"
 const FinishedGatheringFiles = "✓ finished with gathering of Files."

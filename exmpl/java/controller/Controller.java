@@ -1,13 +1,13 @@
-package something
+package com.test.controller;
 
-import some.package.*;
-import something.else.package.*;
+import com.oracle.stdio;
+import com.test.controller.dto.TestObject;
+import com.test.controller.dto.OtherObject;
 
-@Controller
-public class someController {
+@RestController
+public class Controller {
 
-
-privat String someVar;
+private String someVar;
 
 private int someWhat = 1;
 
@@ -19,10 +19,26 @@ private int someWhat = 1;
         @DD:PARAM string token 'security-token' @DD:NOTNULL
         @DD:PAYLOAD TestObject 'json object'
         @DD:TYPE post
-        @DD:RESPONSE 200 json ResponseObject
+        @DD:RESPONSE 200 json OtherObject
         @DD:RESPONSE 500 text
     */
     function testController(some input stuff){
         String test = "12334"
+        return new OtherObject();
+    }
+
+    /*
+        @DD:ENDPOINT 'api/testpoint/two'
+        @DD:DESCRIPTION 'important testendpoint number two'
+        @DD:PARAM int id 'id of user'
+        @DD:PARAM string token 'security-token' @DD:NOTNULL
+        @DD:PAYLOAD TestObject 'json object'
+        @DD:TYPE post
+        @DD:RESPONSE 200 json TestObject
+        @DD:RESPONSE 500 text
+    */
+    function anotherTestController(some input stuff){
+        String test = "12334"
+        return new TestObject();
     }
 }

@@ -1,7 +1,4 @@
-package something.packages
-
-import this;
-import that;
+package payment.test
 
 @Getter
 @Setter
@@ -11,15 +8,10 @@ public String somePublic = "test";
 
 private String someVar;
 
-/*
-    @DD:DESCRIPTION 'some var we use'
-    @DD:NOTNULL
-*/
+@NotNull
 private int someElse;
 
-/*
-    @DD:IGNORE
-*/
+@JsonIgnore
 private bool ignoreThis;
 
 private List<otherObject> testList;

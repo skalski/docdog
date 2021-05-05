@@ -105,11 +105,11 @@ func AnalyseFile(file *os.File) {
 	cd = file.Name()
 	// test if it's a possible controller or a object
 	if notations.IsController(b) {
-		InfoLog(constants.LogMsgFoundController, file.Name())
+		helper.InfoLog(constants.LogMsgFoundController, file.Name(), verbose)
 		for i, s := range temp {
 			if notations.IsEp(s) {
 				if !isSpringBoot {
-					tempEndpointList = append(tempEndpointList, CreateApiEp(i-1, temp))
+					tempEndpointList = append(tempEndpointList, javaLang.CreateApiEp(i-1, temp, verbose, isSpringBoot, &wl))
 				} else {
 					tempEndpointList = append(tempEndpointList, spring.CreateApiEndpoint(i-1, temp))
 				}
@@ -121,7 +121,7 @@ func AnalyseFile(file *os.File) {
 			return
 		}
 
-		InfoLog(constants.LogMsgFoundPossibleObject, file.Name())
+		helper.InfoLog(constants.LogMsgFoundPossibleObject, file.Name(), verbose)
 		var variableList []notations.Variable
 		for i, s := range temp {
 			if IsJavaVariableOrFunctionEntry(s) {
@@ -135,16 +135,19 @@ func AnalyseFile(file *os.File) {
 		}
 		if javaLang.IsAbstrc(temp) {
 			// when Object is an abstract class, we store if in a special List
-			InfoLog(constants.LogMsgFoundAbstrct, file.Name())
+			helper.InfoLog(constants.LogMsgFoundAbstrct, file.Name(), verbose)
 			abstractList = append(abstractList, notations.Abstract{
-				Name:     file.Name(),
-				Variable: variableList,
+				Name:        ObjectNameBuilder(file.Name()),
+				Variable:    variableList,
+				PackageName: javaLang.PackgName(temp),
 			})
 		} else {
 			objectList = append(objectList, notations.Objects{
-				Name:       file.Name(),
-				Variable:   variableList,
-				Implements: javaLang.ChckImpl(temp),
+				Name:        ObjectNameBuilder(file.Name()),
+				Variable:    variableList,
+				Implements:  javaLang.ChckImpl(temp),
+				PackageName: javaLang.PackgName(temp),
+				Imports:     javaLang.Imp(temp),
 			})
 		}
 	}
@@ -155,95 +158,13 @@ func IsJavaVariableOrFunctionEntry(line string) bool {
 }
 
 func CreateVariableStruct(line string, index int, wholeFile []string) (notations.Variable, error) {
-	if *fileType == ".java" {
+	if *fileType == ".java" && !isSpringBoot {
 		return javaLang.JavaVariableHandler(line, index, wholeFile)
 	}
-
+	if isSpringBoot {
+		return spring.SBVariableHandler(line, index, wholeFile)
+	}
 	return notations.Variable{}, errors.New(constants.NoMatchingLanguageMsg)
-}
-
-func CreateApiEp(index int, wholeFile []string) notations.TempEndpoint {
-	CheckLangTag(wholeFile)
-
-	tempVar := notations.TempEndpoint{
-		Url:         "",
-		Description: "",
-		HttpType:    "",
-		Params:      nil,
-		Objects:     nil,
-	}
-	i := index + 1
-
-	for {
-		wl = i
-		if i == len(wholeFile) {
-			break
-		}
-		if notations.CommentEndTag(wholeFile[i]) {
-			break
-		}
-		if notations.IsEp(wholeFile[i]) {
-			InfoLog(constants.LogMsgFoundUrl, wholeFile[i])
-			tempVar.Url = helper.GetStringFromQouteLine(wholeFile[i])
-		}
-		if notations.IsDescriptionNotation(wholeFile[i]) {
-			tempVar.Description = helper.GetStringFromQouteLine(wholeFile[i])
-		}
-		if notations.IsConnectionMethodNotation(wholeFile[i]) {
-			InfoLog(constants.LogMsgFoundConnectioType, wholeFile[i])
-			tempPayload := helper.SeparateLineByTags(wholeFile[i])
-			tempVar.HttpType = tempPayload[1]
-		}
-		if notations.IsParamNotation(wholeFile[i]) {
-			InfoLog(constants.LogMsgFoundParam, wholeFile[i])
-			tempVar.Params = append(tempVar.Params, CreatePrm(wholeFile[i]))
-		}
-		if notations.IsResponseNotation(wholeFile[i]) {
-			InfoLog(constants.LogMsgFoundResponse, wholeFile[i])
-			tempVar.Response = append(tempVar.Response, CreateRes(wholeFile[i]))
-		}
-		if notations.IsPayloadNotation(wholeFile[i]) {
-			InfoLog(constants.LogMsgFoundPayload, wholeFile[i])
-			tempPayload := helper.SeparateLineByTags(wholeFile[i])
-			tempVar.Objects = append(tempVar.Objects, tempPayload[1])
-		}
-		i++
-	}
-	return tempVar
-}
-
-func CreatePrm(l string) notations.Params {
-	InfoLog(constants.LogMsgFoundParamForEndpoint, l)
-	t := helper.SeparateLineByTags(l)
-	param := &notations.Params{
-		Name:        t[2],
-		VarType:     t[1],
-		Description: helper.GetStringFromQouteLine(strings.TrimSpace(l)),
-		Notnull:     false,
-	}
-
-	if IsArray(t[1]) {
-		param.IsArray = true
-	}
-
-	if notations.IsNotNullNotation(l) {
-		param.Notnull = true
-	}
-	return *param
-}
-
-func CreateRes(l string) notations.Response {
-	t := helper.SeparateLineByTags(l)
-	rsp := &notations.Response{HttpCode: t[1]}
-	rsp.Type = t[2]
-	if t[2] == constants.Jsn && len(t) > 2 {
-		rsp.ObjectType = t[3]
-	}
-	return *rsp
-}
-
-func IsArray(line string) bool {
-	return strings.Contains(line, constants.ArrayIdentifier)
 }
 
 func Output() {
@@ -271,12 +192,6 @@ func GenEndpointsArrayStruc() {
 		es.Objects = append(es.Objects, e.Objects...)
 		es.Response = append(es.Response, e.Response...)
 		endpointList = append(endpointList, es)
-	}
-}
-
-func InfoLog(msg string, source string) {
-	if !*verbose {
-		log.Println(msg + source)
 	}
 }
 
@@ -315,12 +230,12 @@ func BuildRAMLObjects() []string {
 		outputData = append(outputData, constants.Types)
 		for _, object := range objectList {
 			for _, a := range abstractList {
-				if ObjectNameBuilder(a.Name) == object.Implements {
+				_, found := helper.Find(object.Imports, a.PackageName)
+				if a.Name == object.Implements && found {
 					object.Variable = append(object.Variable, a.Variable...)
 				}
 			}
-
-			outputData = append(outputData, StringWithTabs(1, ObjectNameBuilder(object.Name)+constants.Colon))
+			outputData = append(outputData, StringWithTabs(1, object.Name+constants.Colon))
 			outputData = append(outputData, StringWithTabs(2, "properties:"))
 			for _, vars := range object.Variable {
 				outputData = append(outputData, StringWithTabs(3, vars.Name+constants.Colon))
@@ -422,14 +337,6 @@ func StringWithTabs(count int, text string) string {
 	return strings.Join(tabs, "") + text
 }
 
-func CheckLangTag(wholeFile []string) bool {
-	if !isSpringBoot && strings.Contains(strings.Join(wholeFile, ""), "springframework") {
-		fmt.Println("WARING: Found SpringBoot you may should use -lang=spring ")
-		return false
-	}
-	return true
-}
-
 func WelcomeMsg() {
 	fmt.Println("     --- DocDog ---")
 	fmt.Printf("      version:%s\n", constants.Version)
@@ -444,6 +351,7 @@ func GoodbyeMsg() {
 	fmt.Println("  /  \\ /  \\")
 	fmt.Println("")
 	fmt.Println("Thanks for using DocDog")
+	fmt.Println(constants.DonationTag)
 }
 
 func RecoverPanic(msg string) {

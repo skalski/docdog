@@ -1,6 +1,7 @@
-package payroll;
+package payroll.test.controller;
 
 import java.util.List;
+import payment.test;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

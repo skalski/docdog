@@ -1,6 +1,4 @@
-package something.packages
-
-import that;
+package com.test.dto;
 
 @Getter
 @Setter
