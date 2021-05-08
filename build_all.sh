@@ -1,5 +1,7 @@
 cd src/
 
+go test ./...
+
 #build Win
 GOOS=windows GOARCH=amd64 go build -o ../bin/win/docdog.exe docdog.go
 

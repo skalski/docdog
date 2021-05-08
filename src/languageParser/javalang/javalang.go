@@ -43,12 +43,12 @@ func JavaVariableHandler(line string, index int, wholeFile []string) (notations.
 			tempVar.Typ = temp[1]
 		}
 		i := 1
-		for i <= 3 {
+		for i <= 4 {
 			if notations.IsNotNullNotation(wholeFile[index-i]) {
 				tempVar.Notnull = true
 			}
 			if notations.IsDescriptionNotation(wholeFile[index-i]) {
-				tempVar.Description = helper.GetStringFromQouteLine(wholeFile[i])
+				tempVar.Description = helper.GetStringFromQouteLine(wholeFile[index-i])
 			}
 
 			i++
