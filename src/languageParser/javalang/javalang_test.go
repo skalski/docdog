@@ -198,6 +198,7 @@ func TestCreateArrayType(t *testing.T) {
 }
 
 func TestCreatePrm(t *testing.T) {
+	verbose := false
 	type args struct {
 		l       string
 		verbose *bool
@@ -207,7 +208,34 @@ func TestCreatePrm(t *testing.T) {
 		args args
 		want notations.Params
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_integer",
+			args: args{
+				l:       "@DD:PARAM int id 'id of user'",
+				verbose: &verbose,
+			},
+			want: notations.Params{
+				Name:        "id",
+				Description: "id of user",
+				VarType:     "int",
+				Notnull:     false,
+				IsArray:     false,
+			},
+		},
+		{
+			name: "test_not_null",
+			args: args{
+				l:       "@DD:PARAM int id 'id of user' @DD:NOTNULL",
+				verbose: &verbose,
+			},
+			want: notations.Params{
+				Name:        "id",
+				Description: "id of user",
+				VarType:     "int",
+				Notnull:     true,
+				IsArray:     false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -227,7 +255,28 @@ func TestCreateRes(t *testing.T) {
 		args args
 		want notations.Response
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test",
+			args: args{
+				l: "@DD:RESPONSE 200 json OtherObject",
+			},
+			want: notations.Response{
+				HttpCode:   "200",
+				Type:       "json",
+				ObjectType: "OtherObject",
+			},
+		},
+		{
+			name: "test_no_object",
+			args: args{
+				l: "@DD:RESPONSE 500 text",
+			},
+			want: notations.Response{
+				HttpCode:   "500",
+				Type:       "text",
+				ObjectType: "",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -247,7 +296,16 @@ func TestImp(t *testing.T) {
 		args args
 		want []string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_import_foo",
+			args: args{fls: []string{"package com.something;", "import oracle.sucks.foo;", "public class Alpha implements Beta {"}},
+			want: []string{"oracle.sucks.foo", "com.something"},
+		},
+		{
+			name: "test_import_foo_bar",
+			args: args{fls: []string{"package com.something;", "import oracle.sucks.foo;", "import oracle.sucks.bar;", "public class Alpha implements Beta {"}},
+			want: []string{"oracle.sucks.foo", "oracle.sucks.bar", "com.something"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -267,7 +325,16 @@ func TestIsAbstrc(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_is_abstract",
+			args: args{fls: []string{"package com.something;", "import oracle.sucks.foo;", "import oracle.sucks.bar;", "public abstract class Alpha {"}},
+			want: true,
+		},
+		{
+			name: "test_simple_class",
+			args: args{fls: []string{"package com.something;", "import oracle.sucks.foo;", "import oracle.sucks.bar;", "public class Alpha {"}},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
