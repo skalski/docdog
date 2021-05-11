@@ -76,15 +76,15 @@ func TestFind(t *testing.T) {
 			want1: false,
 		},
 		{
-			name: "test_happy_path_find_nothing_pt_2",
+			name: "test_happy_path_some_pt",
 			args: args{
 				slice: []string{
 					"something", "that", "is sliceable;",
 				},
 				val: "some",
 			},
-			want:  -1,
-			want1: false,
+			want:  0,
+			want1: true,
 		},
 	}
 	for _, tt := range tests {
