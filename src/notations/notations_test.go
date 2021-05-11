@@ -12,7 +12,7 @@ func TestCommentEndTag(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "test_is_endtag",
+			name: "test_is_end_tag",
 			args: args{line: "*/"},
 			want: true,
 		},
@@ -76,7 +76,20 @@ func TestIsConnectionMethodNotation(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:TYPE post",
+			},
+			want: true,
+		},
+		{
+			name: "test_other_type",
+			args: args{
+				line: "@DD:IGNORE",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,7 +109,20 @@ func TestIsController(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: []byte("@DD:ENDPOINT 'api/testpoint'"),
+			},
+			want: true,
+		},
+		{
+			name: "test_no_endpoint",
+			args: args{
+				line: []byte("@DD:IGNORE"),
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -116,7 +142,20 @@ func TestIsDescriptionNotation(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:DESCRIPTION 'some endpoint'",
+			},
+			want: true,
+		},
+		{
+			name: "test_other_type",
+			args: args{
+				line: "@DD:IGNORE",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -136,7 +175,20 @@ func TestIsEp(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:ENDPOINT 'api/testpoint'",
+			},
+			want: true,
+		},
+		{
+			name: "test_no_endpoint",
+			args: args{
+				line: "@DD:IGNORE",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -156,7 +208,20 @@ func TestIsIgnoreNotation(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:IGNORE",
+			},
+			want: true,
+		},
+		{
+			name: "test_no_ignore_tag",
+			args: args{
+				line: "@DD:ENDPOINT 'api/testpoint'",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -176,7 +241,20 @@ func TestIsNotNullNotation(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:NOTNULL",
+			},
+			want: true,
+		},
+		{
+			name: "test_no_not_null_tag",
+			args: args{
+				line: "@DD:ENDPOINT 'api/testpoint'",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -196,7 +274,27 @@ func TestIsParamNotation(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:PARAM",
+			},
+			want: true,
+		},
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:PARAM something else in the string",
+			},
+			want: true,
+		},
+		{
+			name: "test_no_param_tag",
+			args: args{
+				line: "@DD:ENDPOINT 'api/testpoint'",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -216,7 +314,27 @@ func TestIsPayloadNotation(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:PAYLOAD",
+			},
+			want: true,
+		},
+		{
+			name: "test_happy_path_with_string_attached",
+			args: args{
+				line: "@DD:PAYLOAD something else in the string",
+			},
+			want: true,
+		},
+		{
+			name: "test_no_payload_tag",
+			args: args{
+				line: "@DD:ENDPOINT 'api/testpoint'",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -236,7 +354,27 @@ func TestIsResponseNotation(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				line: "@DD:RESPONSE",
+			},
+			want: true,
+		},
+		{
+			name: "test_happy_path_with_string_attached",
+			args: args{
+				line: "@DD:RESPONSE something else in the string",
+			},
+			want: true,
+		},
+		{
+			name: "test_no_response_tag",
+			args: args{
+				line: "@DD:ENDPOINT 'api/testpoint'",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
