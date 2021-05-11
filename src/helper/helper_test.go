@@ -14,7 +14,13 @@ func TestBytesToStringArrayByLinebreaks(t *testing.T) {
 		args args
 		want []string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{data: []byte("something\nthat\nis sliceable;")},
+			want: []string{
+				"something", "that", "is sliceable;",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -36,7 +42,50 @@ func TestFind(t *testing.T) {
 		want  int
 		want1 bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path",
+			args: args{
+				slice: []string{
+					"something", "that", "is sliceable;",
+				},
+				val: "something",
+			},
+			want:  0,
+			want1: true,
+		},
+		{
+			name: "test_happy_path_find_second",
+			args: args{
+				slice: []string{
+					"something", "that", "is sliceable;",
+				},
+				val: "that",
+			},
+			want:  1,
+			want1: true,
+		},
+		{
+			name: "test_happy_path_find_nothing",
+			args: args{
+				slice: []string{
+					"something", "that", "is sliceable;",
+				},
+				val: "somethingelse",
+			},
+			want:  -1,
+			want1: false,
+		},
+		{
+			name: "test_happy_path_find_nothing_pt_2",
+			args: args{
+				slice: []string{
+					"something", "that", "is sliceable;",
+				},
+				val: "some",
+			},
+			want:  -1,
+			want1: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
