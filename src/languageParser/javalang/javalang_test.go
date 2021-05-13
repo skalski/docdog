@@ -80,35 +80,6 @@ func TestJavaVariableHandler(t *testing.T) {
 	}
 }
 
-func TestChckImpl(t *testing.T) {
-	type args struct {
-		fls []string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "test impl Beta class",
-			args: args{fls: []string{"import foo:", "public class Alpha implements Beta {"}},
-			want: "Beta",
-		},
-		{
-			name: "test no impl",
-			args: args{fls: []string{"import foo:", "public class Alpha {"}},
-			want: "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ChckImpl(tt.args.fls); got != tt.want {
-				t.Errorf("ChckImpl() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestCheckLangTag(t *testing.T) {
 	type args struct {
 		wholeFile    []string
@@ -448,6 +419,35 @@ func TestPackgName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := PackgName(tt.args.fls); got != tt.want {
 				t.Errorf("PackgName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestChckImpl(t *testing.T) {
+	type args struct {
+		fls []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "test impl Beta class",
+			args: args{fls: []string{"import foo:", "public class Alpha implements Beta, Ceta {"}},
+			want: []string{"Beta", "Ceta"},
+		},
+		{
+			name: "test no impl",
+			args: args{fls: []string{"import foo:", "public class Alpha {"}},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ChckImpl(tt.args.fls); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ChckImpl() = %v, want %v", got, tt.want)
 			}
 		})
 	}

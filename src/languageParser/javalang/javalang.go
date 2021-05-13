@@ -125,18 +125,26 @@ func CreateArrayType(line string) string {
 	return strings.Replace(strings.Replace(strings.Replace(line, ">", "", 1), listIdentifier, "", 1), arrayIdentifier, "", 1)
 }
 
-func ChckImpl(fls []string) string {
+func ChckImpl(fls []string) []string {
+	imp := []string{}
+	hasImp := false
 	for _, s := range fls {
 		if strings.Contains(s, Implements) {
 			temp := helper.SeparateLineByTags(s)
-			for i, s := range temp {
+			for _, s := range temp {
+				if helper.LineEnd(s) {
+					return imp
+				}
+				if hasImp {
+					imp = append(imp, strings.Replace(s, ",", "", 1))
+				}
 				if strings.Contains(s, Implements) {
-					return temp[i+1]
+					hasImp = true
 				}
 			}
 		}
 	}
-	return ""
+	return nil
 }
 
 func IsItrf(fls []string) bool {

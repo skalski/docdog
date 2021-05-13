@@ -20,7 +20,7 @@ type Objects struct {
 	Name        string
 	PackageName string
 	Variable    []Variable
-	Implements  string
+	Implements  []string
 	Imports     []string
 }
 

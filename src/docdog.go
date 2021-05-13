@@ -134,7 +134,7 @@ func AnalyseFile(file *os.File) {
 			}
 		}
 		if javaLang.IsAbstrc(temp) {
-			// when Object is an abstract class, we store if in a special List
+			// when Object is an abstract class, we store it in a special List
 			helper.InfoLog(constants.LogMsgFoundAbstrct, file.Name(), verbose)
 			abstractList = append(abstractList, notations.Abstract{
 				Name:        ObjectNameBuilder(file.Name()),
@@ -227,14 +227,19 @@ func fileBuilderRAML() {
 func BuildRAMLObjects() []string {
 	outputData := []string{}
 	if len(objectList) != 0 {
+
 		outputData = append(outputData, constants.Types)
 		for _, object := range objectList {
 			for _, a := range abstractList {
 				_, found := helper.Find(object.Imports, a.PackageName)
-				if a.Name == object.Implements && found {
-					object.Variable = append(object.Variable, a.Variable...)
+				// here we bring the additional Variables from the Abstracts back to the implementing Object
+				for _, imp := range object.Implements {
+					if a.Name == imp && found {
+						object.Variable = append(object.Variable, a.Variable...)
+					}
 				}
 			}
+
 			outputData = append(outputData, StringWithTabs(1, object.Name+constants.Colon))
 			outputData = append(outputData, StringWithTabs(2, "properties:"))
 			for _, vars := range object.Variable {

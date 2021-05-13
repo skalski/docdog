@@ -2,7 +2,7 @@ package com.test.dto;
 
 @Getter
 @Setter
-class OtherObject implements OtherAbsObject {
+class OtherObject implements OtherAbsObject, SecondAbsObject {
 
 public String somePublic = "test";
 

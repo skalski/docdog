@@ -126,7 +126,7 @@ func IsFinal(s string, i int) int {
 func FetchMethodFromMapping(s string) string {
 	for _, m := range methods {
 		if strings.Contains(strings.ToLower(s), strings.ToLower(m)) {
-			return m
+			return strings.ToLower(m)
 		}
 	}
 	return ""
@@ -146,7 +146,7 @@ func GetProtocolFormMappingTag(str string) (result string) {
 	if e == -1 {
 		return
 	}
-	return str[s : s+e]
+	return strings.ToLower(str[s : s+e])
 }
 
 func GetStringFromQouteLine(str string) (result string) {

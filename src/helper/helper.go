@@ -40,3 +40,7 @@ func Find(slice []string, val string) (int, bool) {
 	}
 	return -1, false
 }
+
+func LineEnd(s string) bool {
+	return strings.Contains(s, "{")
+}
