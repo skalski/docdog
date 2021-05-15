@@ -6,6 +6,12 @@ import (
 	"testing"
 )
 
+var wholeFileHappyPath = []string{
+	"@DeleteMapping(\"/employees/delete/{id}\")",
+	"void deleteEmployee(@PathVariable Long id) {",
+	"repository.deleteById(id);",
+}
+
 func TestCreateApiEndpoint(t *testing.T) {
 	type args struct {
 		index     int
@@ -16,7 +22,21 @@ func TestCreateApiEndpoint(t *testing.T) {
 		args args
 		want notations.TempEndpoint
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_happy_path_spring_endpoint",
+			args: args{
+				index:     0,
+				wholeFile: wholeFileHappyPath,
+			},
+			want: notations.TempEndpoint{
+				Url:         "",
+				Description: "",
+				HttpType:    "",
+				Params:      nil,
+				Response:    nil,
+				Objects:     nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

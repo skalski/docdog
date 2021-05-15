@@ -365,7 +365,16 @@ func TestIsItrf(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test_is_abstract",
+			args: args{fls: []string{"package com.something;", "import oracle.sucks.foo;", "import oracle.sucks.bar;", "public interface Alpha {"}},
+			want: true,
+		},
+		{
+			name: "test_simple_class",
+			args: args{fls: []string{"package com.something;", "import oracle.sucks.foo;", "import oracle.sucks.bar;", "public class Alpha {"}},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

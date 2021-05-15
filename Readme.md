@@ -10,8 +10,8 @@ Twitter: https://twitter.com/KalskiSwen
 
 ## Features
 
-* make RAML 1.0 files including scheme from plain JAVA
-* make RAML 1.0 files including scheme without using tags from Spring Boot 
+* make RAML 1.0 files including the scheme from plain JAVA
+* make RAML 1.0 files including the scheme without using tags from Spring Boot 
 * understand deeper structures of java including Interfaces and implementations
 * generated files can used in API Console without hassle
 * can pipe to CLI for other cmd tools
@@ -19,20 +19,22 @@ Twitter: https://twitter.com/KalskiSwen
 
 
 ## Download
-You can directly download the latest binaries here
+[See latest release](https://github.com/skalski/docdog/releases) 
 
-[Windows (x64)](https://github.com/skalski/docdog/raw/master/bin/win/docdog.exe) ,
-[Linux (x64)](https://github.com/skalski/docdog/raw/master/bin/linux/docdog) ,
-[OSX (amd)](https://github.com/skalski/docdog/raw/master/bin/macos_amd/docdog) ,
-[OSX (arm)](https://github.com/skalski/docdog/raw/master/bin/macos_arm/docdog)
+Binaries available for Mac OS (ARM/intel), Linux (amd/intel 64bit) and Windows 64bit
+
+## Build
+To build the latest source for your own, you can use `./build_all.sh` on Linux, Mac OS or even
+Windows with Linux Subsystem.
+You have to use Go 1.13 at least.
 
 ## How to use
-Simple download the binaries or build from source.
+Simply download the binaries or build from source.
 
 There is one required Flag that should point to the root of source files:
 `-path=/path/to/the/root/`
 
-If no `-out` is provided, the RAML File will generated as `out.raml` in the folder, where the binary was called.
+If no `-out` is provided, the RAML File will be generated as `out.raml` in the folder, where the binary was called.
 
 ## Flags
 * `-help` show help
