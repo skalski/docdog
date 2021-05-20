@@ -157,7 +157,16 @@ func TestCreateArrayType(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "is_array_type",
+			args: args{line: "private string[] something"},
+			want: "private string something",
+		},
+		{
+			name: "is_list_type",
+			args: args{line: "private List<someObject> something"},
+			want: "private someObject something",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -325,7 +334,21 @@ func TestIsArray(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "is_array_type",
+			args: args{line: "private string[] something"},
+			want: true,
+		},
+		{
+			name: "is_list_type_instead_of_array",
+			args: args{line: "public List<anyObject> something"},
+			want: false,
+		},
+		{
+			name: "is_list_type",
+			args: args{line: "public String someList"},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -345,7 +368,21 @@ func TestIsArrayType(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "is_array_type",
+			args: args{line: "private string[] something"},
+			want: true,
+		},
+		{
+			name: "is_list_type",
+			args: args{line: "public List<anyObject> something"},
+			want: true,
+		},
+		{
+			name: "is_list_type",
+			args: args{line: "public String someList"},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1,2 +1,4 @@
-./bin
-./.idea
+bin
+bin/*
+idea
+*.exe
